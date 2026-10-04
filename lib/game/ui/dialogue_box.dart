@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../systems/dialogue_system.dart';
@@ -46,7 +47,7 @@ class _DialogueBoxOverlayState extends State<DialogueBoxOverlay> {
       _displayedText += line.text[_charIndex];
       _charIndex++;
     });
-    Future.delayed(const Duration(milliseconds: 25), _typeNext);
+    Future.delayed(const Duration(milliseconds: 30), _typeNext);
   }
 
   void _advance() {
@@ -75,24 +76,30 @@ class _DialogueBoxOverlayState extends State<DialogueBoxOverlay> {
     return GestureDetector(
       onTap: _advance,
       child: Container(
-        color: const Color(0x88000000),
+        color: Colors.black.withValues(alpha: 0.6),
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Container(
-            margin: const EdgeInsets.all(20),
-            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xF00A0E27), Color(0xF01A1F3A)],
+                colors: [
+                  const Color(0xFF0A0E27).withValues(alpha: 0.98),
+                  const Color(0xFF1A1F3A).withValues(alpha: 0.98),
+                ],
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFFFD700), width: 2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFFFD700).withValues(alpha: 0.7),
+                width: 2,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFFFFD700).withValues(alpha: 0.3),
-                  blurRadius: 25,
+                  blurRadius: 30,
                 ),
               ],
             ),
@@ -100,32 +107,64 @@ class _DialogueBoxOverlayState extends State<DialogueBoxOverlay> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // اسم المتحدث
-                Text(
-                  line.speaker,
-                  style: GoogleFonts.cinzel(
-                    color: const Color(0xFFFFD700),
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const RadialGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFFD700).withValues(alpha: 0.6),
+                            blurRadius: 15,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.person, color: Colors.black, size: 26),
+                    ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          line.speaker,
+                          style: GoogleFonts.cinzel(
+                            color: const Color(0xFFFFD700),
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        Container(
+                          width: 80,
+                          height: 2,
+                          color: const Color(0xFFFFD700).withValues(alpha: 0.5),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
-                // النص
+                const SizedBox(height: 18),
                 Text(
                   _displayedText,
                   style: GoogleFonts.cinzel(
-                    color: const Color(0xFFE0E0E0),
-                    fontSize: 16,
-                    height: 1.6,
+                    color: Colors.white,
+                    fontSize: 17,
+                    height: 1.7,
                   ),
                 ),
-                // أزرار الاختيار
-                if (!_isTyping && line.choiceA != null && line.choiceB != null) ...[
-                  const SizedBox(height: 16),
+                if (!_isTyping &&
+                    line.choiceA != null &&
+                    line.choiceB != null) ...[
+                  const SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(
-                        child: _ChoiceButton(
+                        child: _ChoiceBtn(
                           label: line.choiceA!,
                           color: const Color(0xFF4CAF50),
                           onTap: _advance,
@@ -133,7 +172,7 @@ class _DialogueBoxOverlayState extends State<DialogueBoxOverlay> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _ChoiceButton(
+                        child: _ChoiceBtn(
                           label: line.choiceB!,
                           color: const Color(0xFFE53935),
                           onTap: _advance,
@@ -142,21 +181,31 @@ class _DialogueBoxOverlayState extends State<DialogueBoxOverlay> {
                     ],
                   ),
                 ],
-                if (!_isTyping && (line.choiceA == null || line.choiceB == null))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        'اضغط للمتابعة ▶',
-                        style: GoogleFonts.cinzel(
-                          color: const Color(0xFFFFD700),
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
+                if (!_isTyping &&
+                    (line.choiceA == null || line.choiceB == null)) ...[
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'اضغط للمتابعة',
+                          style: GoogleFonts.cinzel(
+                            color: const Color(0xFFFFD700),
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_rounded,
+                            color: Color(0xFFFFD700), size: 16)
+                            .animate(onPlay: (c) => c.repeat())
+                            .moveX(begin: 0, end: 8, duration: 800.ms),
+                      ],
                     ),
                   ),
+                ],
               ],
             ),
           ),
@@ -166,35 +215,60 @@ class _DialogueBoxOverlayState extends State<DialogueBoxOverlay> {
   }
 }
 
-class _ChoiceButton extends StatelessWidget {
+class _ChoiceBtn extends StatefulWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
 
-  const _ChoiceButton({
+  const _ChoiceBtn({
     required this.label,
     required this.color,
     required this.onTap,
   });
 
   @override
+  State<_ChoiceBtn> createState() => _ChoiceBtnState();
+}
+
+class _ChoiceBtnState extends State<_ChoiceBtn> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onTap,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color.withValues(alpha: 0.2),
-        foregroundColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: color, width: 2),
-        ),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.cinzel(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                widget.color.withValues(alpha: 0.3),
+                widget.color.withValues(alpha: 0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: widget.color, width: 2),
+            boxShadow: [
+              BoxShadow(color: widget.color.withValues(alpha: 0.4), blurRadius: 12),
+            ],
+          ),
+          child: Text(
+            widget.label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cinzel(
+              fontSize: 15,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );
