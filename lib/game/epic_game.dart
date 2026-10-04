@@ -19,6 +19,7 @@ import 'components/player/player_state.dart';
 import 'components/player/projectile.dart';
 import 'systems/achievement_system.dart';
 import 'systems/camera_shake.dart';
+import 'systems/dialogue_system.dart';
 import 'systems/particle_system.dart';
 import 'systems/save_system.dart';
 import 'utils/constants.dart';
@@ -31,6 +32,7 @@ class EpicGame extends Forge2DGame {
   late ParallaxBackground background;
   final CameraShake cameraShake = CameraShake();
   final AchievementSystem achievements = AchievementSystem();
+  final DialogueSystem dialogue = DialogueSystem();
   final math.Random _rng = math.Random();
 
   int health = GameConstants.maxHealth;
@@ -41,6 +43,7 @@ class EpicGame extends Forge2DGame {
   int level = 1;
   bool isPlaying = false;
   bool isPaused = false;
+  bool _introShown = false;
   double _autoSaveTimer = 0;
   double _projectileCooldown = 0;
 
@@ -49,7 +52,6 @@ class EpicGame extends Forge2DGame {
     background = ParallaxBackground();
     await add(background);
 
-    // الأرضية والمنصات
     await add(Ground(Vector2(0, 8), Vector2(80, 1)));
     await add(Ground(Vector2(-14, 2), Vector2(6, 0.5)));
     await add(Ground(Vector2(14, -2), Vector2(6, 0.5)));
@@ -58,14 +60,11 @@ class EpicGame extends Forge2DGame {
     await add(Ground(Vector2(25, 2), Vector2(4, 0.5)));
     await add(Ground(Vector2(-32, -6), Vector2(3, 0.5)));
     await add(Ground(Vector2(32, -6), Vector2(3, 0.5)));
-
-    // حيطان جانبية (للتسلق)
     await add(Ground(Vector2(-40, 0), Vector2(1, 20)));
     await add(Ground(Vector2(40, 0), Vector2(1, 20)));
     await add(Ground(Vector2(-10, -10), Vector2(1, 6)));
     await add(Ground(Vector2(10, -10), Vector2(1, 6)));
 
-    // نقاط الخطاف
     await add(HookAnchor(Vector2(-6, -3)));
     await add(HookAnchor(Vector2(6, -3)));
     await add(HookAnchor(Vector2(-18, -8)));
@@ -74,14 +73,12 @@ class EpicGame extends Forge2DGame {
     await add(HookAnchor(Vector2(-30, -3)));
     await add(HookAnchor(Vector2(30, -3)));
 
-    // أعداء
     await add(BaseEnemy(Vector2(-18, 6)));
     await add(BaseEnemy(Vector2(18, -5)));
     await add(ChaserEnemy(Vector2(-28, 6)));
     await add(ChaserEnemy(Vector2(28, -5)));
     await add(BossEnemy(Vector2(0, -18)));
 
-    // عملات
     for (int i = -20; i <= 20; i += 4) {
       await add(Coin(Vector2(i.toDouble(), 5.5)));
     }
@@ -89,7 +86,6 @@ class EpicGame extends Forge2DGame {
       await add(Coin(Vector2(i.toDouble(), -9.5)));
     }
 
-    // قوارير صحة
     await add(HealthPotion(Vector2(-15, 4.5)));
     await add(HealthPotion(Vector2(15, -4.5)));
 
@@ -108,8 +104,23 @@ class EpicGame extends Forge2DGame {
   void startGame() {
     isPlaying = true;
     overlays.remove('mainMenu');
-    overlays.add('hud');
+
+    if (!_introShown) {
+      _introShown = true;
+      overlays.add('dialogue');
+      Future.delayed(const Duration(seconds: 8), () {
+        overlays.remove('dialogue');
+        overlays.add('hud');
+      });
+    } else {
+      overlays.add('hud');
+    }
   }
+
+  void openSettings() => overlays.add('settings');
+  void closeSettings() => overlays.remove('settings');
+  void openAchievements() => overlays.add('achievements');
+  void closeAchievements() => overlays.remove('achievements');
 
   void pauseGame() {
     if (isPaused) return;
@@ -153,7 +164,6 @@ class EpicGame extends Forge2DGame {
       player.releaseHook();
       return;
     }
-    // ابحث عن أقرب نقطة
     HookAnchor? nearest;
     double minDist = 12.0;
     for (final anchor in children.whereType<HookAnchor>()) {
@@ -177,11 +187,9 @@ class EpicGame extends Forge2DGame {
   void fireProjectile() {
     if (_projectileCooldown > 0) return;
     _projectileCooldown = 0.35;
-
     final dir = Vector2(player.isFacingRight ? 1 : -1, 0);
     final spawnPos = player.body.position + dir * 0.8;
     add(Projectile(spawnPos, dir));
-
     particles.spawnBurst(
       spawnPos,
       count: 5,
@@ -194,7 +202,6 @@ class EpicGame extends Forge2DGame {
     player.attack();
     final dir = player.isFacingRight ? 1.0 : -1.0;
     final attackPos = player.body.position + Vector2(dir * 1.0, 0);
-
     add(HitEffect(attackPos));
     particles.spawnBurst(
       attackPos,
@@ -202,7 +209,6 @@ class EpicGame extends Forge2DGame {
       color: const Color(0xFFFFD700),
       speed: 130,
     );
-
     _damageEnemiesNear(attackPos, 1.3, 2.2, 20, 15);
   }
 
@@ -280,13 +286,11 @@ class EpicGame extends Forge2DGame {
 
     cameraShake.update(dt);
     if (cameraShake.isActive) {
-      camera.viewfinder.position =
-          player.body.position + cameraShake.offset;
+      camera.viewfinder.position = player.body.position + cameraShake.offset;
     }
 
     if (!isPlaying) return;
 
-    // جمع العملات
     for (final coin in children.whereType<Coin>().toList()) {
       if (coin.collected) continue;
       if ((coin.body.position - player.body.position).length < 0.8) {
@@ -296,7 +300,6 @@ class EpicGame extends Forge2DGame {
       }
     }
 
-    // قوارير صحة
     for (final potion in children.whereType<HealthPotion>().toList()) {
       if ((potion.body.position - player.body.position).length < 0.8) {
         healPlayer(30);
@@ -304,7 +307,6 @@ class EpicGame extends Forge2DGame {
       }
     }
 
-    // ضرر الأعداء
     for (final enemy in children.whereType<BaseEnemy>()) {
       if ((enemy.body.position - player.body.position).length < 1.0) {
         health = (health - 1).clamp(0, maxHealth);
@@ -321,7 +323,6 @@ class EpicGame extends Forge2DGame {
       }
     }
 
-    // ضرر القذائف
     for (final proj in children.whereType<Projectile>().toList()) {
       for (final enemy in children.whereType<BaseEnemy>()) {
         if ((proj.body.position - enemy.body.position).length < 0.6) {
@@ -334,13 +335,11 @@ class EpicGame extends Forge2DGame {
       }
     }
 
-    // إحياء نقط التعليق حسب القرب
     for (final anchor in children.whereType<HookAnchor>()) {
       anchor.isInRange =
           (anchor.body.position - player.body.position).length < 12.0;
     }
 
-    // الحفظ التلقائي
     _autoSaveTimer += dt;
     if (_autoSaveTimer >= 10) {
       _autoSaveTimer = 0;
