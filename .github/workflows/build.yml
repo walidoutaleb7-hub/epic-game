@@ -1,9 +1,12 @@
-name: Build APK
+name: Build & Release APK
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -26,26 +29,17 @@ jobs:
 
       - name: Update Kotlin and Android SDK
         run: |
-          # تحديث Kotlin (يدعم .kts و .gradle)
           if [ -f android/settings.gradle.kts ]; then
             sed -i 's/org.jetbrains.kotlin.android" version ".*"/org.jetbrains.kotlin.android" version "2.0.0"/' android/settings.gradle.kts
           fi
           if [ -f android/settings.gradle ]; then
             sed -i 's/org.jetbrains.kotlin.android" version ".*"/org.jetbrains.kotlin.android" version "2.0.0"/' android/settings.gradle
           fi
-          if [ -f android/build.gradle.kts ]; then
-            sed -i 's/ext.kotlin_version = ".*"/ext.kotlin_version = "2.0.0"/' android/build.gradle.kts || true
-          fi
-          if [ -f android/build.gradle ]; then
-            sed -i "s/ext.kotlin_version = '.*'/ext.kotlin_version = '2.0.0'/" android/build.gradle
-          fi
-          # تحديث compileSdk
           if [ -f android/app/build.gradle.kts ]; then
             sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/' android/app/build.gradle.kts
           fi
           if [ -f android/app/build.gradle ]; then
             sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/' android/app/build.gradle
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/' android/app/build.gradle
           fi
 
       - name: Install dependencies
@@ -54,8 +48,25 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Upload APK
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: epic-game-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Epic Game - Build #${{ github.run_number }}"
+          body: |
+            🎮 بناء تلقائي رقم ${{ github.run_number }}
+            
+            📱 حمّل الـ APK من الأسفل
+          files: build/app/outputs/flutter-apk/app-release.apk
+          draft: false
+          prerelease: false
