@@ -47,51 +47,67 @@ class GameWrapper extends StatefulWidget {
 
 class _GameWrapperState extends State<GameWrapper> {
   late final EmberfallGame _game;
+  bool _splashDone = false;
 
   @override
   void initState() {
     super.initState();
     _game = EmberfallGame();
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _splashDone = true);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E27),
-      body: GameWidget<EmberfallGame>(
-        game: _game,
-        loadingBuilder: (context) => const SplashScreenOverlay(),
-        overlayBuilderMap: {
-          'splash': (context, game) => const SplashScreenOverlay(),
-          'mainMenu': (context, game) => MainMenuOverlay(game: game),
-          'hud': (context, game) => HudOverlay(game: game),
-          'pauseMenu': (context, game) => PauseMenuOverlay(game: game),
-          'settings': (context, game) => SettingsMenuOverlay(onClose: game.closeSettings),
-          'achievements': (context, game) => AchievementsPanelOverlay(
-                system: game.achievements,
-                onClose: game.closeAchievements,
-              ),
-          'dialogue': (context, game) => DialogueBoxOverlay(
-                lines: game.dialogue.getDialogue('intro')!,
-                onComplete: () {
-                  game.overlays.remove('dialogue');
-                  if (game.isPlaying) game.overlays.add('hud');
-                },
-              ),
-          'gameOver': (context, game) => GameOverOverlay(
-                onRetry: game.retryLevel,
-                onMenu: game.returnToMenu,
-                score: game.score,
-                kills: game.enemiesKilled,
-              ),
-          'victory': (context, game) => VictoryOverlay(
-                onNextLevel: game.nextLevel,
-                onMenu: game.returnToMenu,
-                score: game.score,
-                isLastLevel: game.levels.isLastLevel,
-              ),
-          'hint': (context, game) => TutorialHintOverlay(hint: game.currentHint),
-        },
+      body: Stack(
+        children: [
+          // اللعبة تحت (تتحمل في الخلفية)
+          GameWidget<EmberfallGame>(
+            game: _game,
+            loadingBuilder: (context) => const SizedBox.shrink(),
+            overlayBuilderMap: {
+              'mainMenu': (context, game) => MainMenuOverlay(game: game),
+              'hud': (context, game) => HudOverlay(game: game),
+              'pauseMenu': (context, game) => PauseMenuOverlay(game: game),
+              'settings': (context, game) =>
+                  SettingsMenuOverlay(onClose: game.closeSettings),
+              'achievements': (context, game) => AchievementsPanelOverlay(
+                    system: game.achievements,
+                    onClose: game.closeAchievements,
+                  ),
+              'dialogue': (context, game) => DialogueBoxOverlay(
+                    lines: game.dialogue.getDialogue('intro')!,
+                    onComplete: () {
+                      game.overlays.remove('dialogue');
+                      if (game.isPlaying) game.overlays.add('hud');
+                    },
+                  ),
+              'gameOver': (context, game) => GameOverOverlay(
+                    onRetry: game.retryLevel,
+                    onMenu: game.returnToMenu,
+                    score: game.score,
+                    kills: game.enemiesKilled,
+                  ),
+              'victory': (context, game) => VictoryOverlay(
+                    onNextLevel: game.nextLevel,
+                    onMenu: game.returnToMenu,
+                    score: game.score,
+                    isLastLevel: game.levels.isLastLevel,
+                  ),
+              'hint': (context, game) =>
+                  TutorialHintOverlay(hint: game.currentHint),
+            },
+          ),
+
+          // الـ Splash فوق (يختفي بعد 4 ثواني)
+          if (!_splashDone)
+            const Positioned.fill(
+              child: SplashScreenOverlay(),
+            ),
+        ],
       ),
     );
   }
