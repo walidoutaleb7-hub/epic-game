@@ -1,25 +1,18 @@
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:flame_forge2d/flame_forge2d.dart';
-import '../../utils/constants.dart';
 
-class Coin extends BodyComponent {
+import 'package:flame/components.dart';
+
+class Coin extends PositionComponent {
   double _t = 0;
   bool collected = false;
 
   Coin(Vector2 position)
       : super(
-          bodyDef: BodyDef()
-            ..type = BodyType.static
-            ..position = position,
+          position: position,
+          size: Vector2(30, 30),
+          anchor: Anchor.center,
         );
-
-  @override
-  Body createBody() {
-    final shape = CircleShape()..radius = 0.3;
-    final fixture = FixtureDef(shape, isSensor: true);
-    return world.createBody(bodyDef!)..createFixture(fixture);
-  }
 
   @override
   void update(double dt) {
@@ -32,25 +25,16 @@ class Coin extends BodyComponent {
     final scaleX = (math.cos(_t)).abs().clamp(0.15, 1.0);
     canvas.save();
     canvas.scale(scaleX, 1.0);
-    canvas.drawCircle(
-      Offset.zero,
-      0.3,
-      Paint()..color = GameConstants.goldColor,
-    );
-    canvas.drawCircle(
-      Offset.zero,
-      0.18,
-      Paint()..color = const Color(0xFFFFA000),
-    );
+    canvas.drawCircle(Offset.zero, 15, Paint()..color = const Color(0xFFFFD700));
+    canvas.drawCircle(Offset.zero, 9, Paint()..color = const Color(0xFFFFA000));
     canvas.restore();
 
-    // هالة
     canvas.drawCircle(
       Offset.zero,
-      0.35,
+      18,
       Paint()
-        ..color = GameConstants.goldColor.withValues(alpha: 0.3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+        ..color = const Color(0xFFFFD700).withValues(alpha: 0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
   }
 }

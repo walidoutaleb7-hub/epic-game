@@ -1,13 +1,17 @@
 import 'dart:ui';
+
 import 'package:flame/components.dart';
 
 class DashTrail extends PositionComponent {
   double _timer = 0;
   static const double _duration = 0.3;
 
-  DashTrail(Vector2 position) {
-    this.position = position;
-  }
+  DashTrail(Vector2 position)
+      : super(
+          position: position,
+          size: Vector2(40, 50),
+          anchor: Anchor.center,
+        );
 
   @override
   void update(double dt) {
@@ -21,12 +25,12 @@ class DashTrail extends PositionComponent {
     final alpha = (1 - _timer / _duration).clamp(0.0, 1.0);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        const Rect.fromLTWH(-0.6, -0.9, 1.2, 1.8),
-        const Radius.circular(6),
+        Rect.fromCenter(center: Offset.zero, width: 40, height: 50),
+        const Radius.circular(8),
       ),
       Paint()
         ..color = const Color(0xFF4FC3F7).withValues(alpha: alpha * 0.5)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
     );
   }
 }

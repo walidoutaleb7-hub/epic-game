@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:flame/components.dart';
 
 class CameraShake {
@@ -9,7 +10,7 @@ class CameraShake {
 
   bool get isActive => _intensity > 0;
 
-  void shake({double intensity = 0.5, double duration = 0.3}) {
+  void shake({double intensity = 5, double duration = 0.3}) {
     _intensity = intensity;
     _duration = duration;
     _elapsed = 0;
@@ -17,11 +18,11 @@ class CameraShake {
 
   Vector2 get offset {
     if (!isActive) return Vector2.zero();
-    final progress = (_elapsed / _duration).clamp(0.0, 1.0);
-    final currentIntensity = _intensity * (1 - progress);
+    final p = (_elapsed / _duration).clamp(0.0, 1.0);
+    final i = _intensity * (1 - p);
     return Vector2(
-      (_rng.nextDouble() - 0.5) * 2 * currentIntensity,
-      (_rng.nextDouble() - 0.5) * 2 * currentIntensity,
+      (_rng.nextDouble() - 0.5) * 2 * i,
+      (_rng.nextDouble() - 0.5) * 2 * i,
     );
   }
 

@@ -1,13 +1,12 @@
 import 'dart:ui';
+
 import 'package:flame/components.dart';
 
 class HitEffect extends PositionComponent {
   double _timer = 0;
   static const double _duration = 0.25;
 
-  HitEffect(Vector2 position) {
-    this.position = position;
-  }
+  HitEffect(Vector2 position) : super(position: position);
 
   @override
   void update(double dt) {
@@ -18,27 +17,23 @@ class HitEffect extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
-    final progress = (_timer / _duration).clamp(0.0, 1.0);
-    final radius = 0.3 + progress * 1.5;
-    final alpha = 1.0 - progress;
-
-    // حلقة خارجية
+    final p = (_timer / _duration).clamp(0.0, 1.0);
+    final radius = 10 + p * 40;
+    final alpha = 1.0 - p;
     canvas.drawCircle(
       Offset.zero,
       radius,
       Paint()
         ..color = const Color(0xFFFFD700).withValues(alpha: alpha)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.15 * (1 - progress),
+        ..strokeWidth = 4 * (1 - p),
     );
-
-    // وهج
     canvas.drawCircle(
       Offset.zero,
       radius * 0.7,
       Paint()
         ..color = const Color(0xFFFF5252).withValues(alpha: alpha * 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
   }
 }

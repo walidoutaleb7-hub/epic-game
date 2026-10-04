@@ -16,56 +16,19 @@ class Achievement {
 
 class AchievementSystem {
   final List<Achievement> _achievements = [
-    Achievement(
-      id: 'first_blood',
-      title: 'الدم الأول',
-      description: 'اقتل عدوك الأول',
-      target: 1,
-    ),
-    Achievement(
-      id: 'hunter',
-      title: 'صياد ماهر',
-      description: 'اقتل 10 أعداء',
-      target: 10,
-    ),
-    Achievement(
-      id: 'slayer',
-      title: 'سفّاح',
-      description: 'اقتل 50 عدو',
-      target: 50,
-    ),
-    Achievement(
-      id: 'collector',
-      title: 'جامع',
-      description: 'اجمع 100 عملة',
-      target: 100,
-    ),
-    Achievement(
-      id: 'treasure',
-      title: 'كنز',
-      description: 'اجمع 500 عملة',
-      target: 500,
-    ),
-    Achievement(
-      id: 'boss_killer',
-      title: 'قاهر الزعماء',
-      description: 'اهزم زعيمًا',
-      target: 1,
-    ),
-    Achievement(
-      id: 'explorer',
-      title: 'مستكشف',
-      description: 'وصل لمستوى 5',
-      target: 5,
-    ),
+    Achievement(id: 'first_blood', title: 'الدم الأول', description: 'اقتل عدوك الأول', target: 1),
+    Achievement(id: 'hunter', title: 'صياد ماهر', description: 'اقتل 10 أعداء', target: 10),
+    Achievement(id: 'slayer', title: 'سفّاح', description: 'اقتل 50 عدو', target: 50),
+    Achievement(id: 'collector', title: 'جامع', description: 'اجمع 100 عملة', target: 100),
+    Achievement(id: 'treasure', title: 'كنز', description: 'اجمع 500 عملة', target: 500),
   ];
 
   List<Achievement> get all => _achievements;
 
-  Achievement? register(String id, int increment) {
+  Achievement? register(String id, int inc) {
     final a = _achievements.where((x) => x.id == id).firstOrNull;
     if (a == null || a.unlocked) return null;
-    a.progress += increment;
+    a.progress += inc;
     if (a.progress >= a.target) {
       a.unlocked = true;
       return a;

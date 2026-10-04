@@ -1,35 +1,21 @@
 import 'dart:ui';
-import 'package:flame_forge2d/flame_forge2d.dart';
-import '../../utils/constants.dart';
 
-class ChaserEnemy extends BodyComponent {
-  final Vector2 spawnPos;
+import 'package:flame/components.dart';
+
+class ChaserEnemy extends PositionComponent with HasGameReference {
   int health;
   final int maxHealth;
   double _hitTimer = 0;
-  double _attackCooldown = 0;
   bool _isAggro = false;
-  static const double _aggroRange = 8.0;
-  static const double _chaseSpeed = 6.0;
-  Body? target;
+  final double _aggroRange = 350;
 
   ChaserEnemy(Vector2 position, {this.health = 50})
-      : spawnPos = position.clone(),
-        maxHealth = health,
+      : maxHealth = health,
         super(
-          bodyDef: BodyDef()
-            ..type = BodyType.dynamic
-            ..position = position
-            ..fixedRotation = true
-            ..linearDamping = 0.5,
+          position: position,
+          size: Vector2(45, 45),
+          anchor: Anchor.center,
         );
-
-  @override
-  Body createBody() {
-    final shape = PolygonShape()..setAsBoxXY(0.55, 0.55);
-    final fixture = FixtureDef(shape, friction: 0.3, density: 1.2);
-    return world.createBody(bodyDef!)..createFixture(fixture);
-  }
 
   void takeDamage(int dmg) {
     health -= dmg;
@@ -42,27 +28,21 @@ class ChaserEnemy extends BodyComponent {
   void update(double dt) {
     super.update(dt);
     if (_hitTimer > 0) _hitTimer -= dt;
-    if (_attackCooldown > 0) _attackCooldown -= dt;
 
-    if (target == null) return;
+    final player = game.children.whereType<PositionComponent>()
+        .where((c) => c.runtimeType.toString() == 'Player')
+        .firstOrNull;
+    if (player == null) return;
 
-    final diff = target!.position - body.position;
-    final distance = diff.length;
+    final diff = player.position - position;
+    final dist = diff.length;
 
-    if (distance < _aggroRange) _isAggro = true;
-    if (distance > _aggroRange * 2) _isAggro = false;
+    if (dist < _aggroRange) _isAggro = true;
+    if (dist > _aggroRange * 2) _isAggro = false;
 
-    if (_isAggro && distance > 0.1) {
+    if (_isAggro && dist > 10) {
       final dir = diff.normalized();
-      body.linearVelocity = Vector2(
-        dir.x * _chaseSpeed,
-        body.linearVelocity.y,
-      );
-    } else {
-      body.linearVelocity = Vector2(
-        body.linearVelocity.x * 0.9,
-        body.linearVelocity.y,
-      );
+      position += dir * 120 * dt;
     }
   }
 
@@ -71,46 +51,41 @@ class ChaserEnemy extends BodyComponent {
     final hit = _hitTimer > 0;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        const Rect.fromLTWH(-0.55, -0.55, 1.1, 1.1),
-        const Radius.circular(5),
+        Rect.fromCenter(center: Offset.zero, width: 45, height: 45),
+        const Radius.circular(8),
       ),
-      Paint()..color = hit ? const Color(0xFFFFFFFF) : const Color(0xFF7B1FA2),
-    );
-
-    // عيون غاضبة
-    final eye = Paint()..color = const Color(0xFFFFEB3B);
-    final pupil = Paint()..color = const Color(0xFF000000);
-    canvas.drawCircle(const Offset(-0.2, -0.15), 0.13, eye);
-    canvas.drawCircle(const Offset(0.2, -0.15), 0.13, eye);
-    canvas.drawCircle(const Offset(-0.2, -0.1), 0.06, pupil);
-    canvas.drawCircle(const Offset(0.2, -0.1), 0.06, pupil);
-
-    // حواجب
-    canvas.drawLine(
-      const Offset(-0.3, -0.35),
-      const Offset(-0.05, -0.25),
       Paint()
-        ..color = const Color(0xFF000000)
-        ..strokeWidth = 0.07,
+        ..color = hit ? const Color(0xFFFFFFFF) : const Color(0xFF7B1FA2),
     );
-    canvas.drawLine(
-      const Offset(0.3, -0.35),
-      const Offset(0.05, -0.25),
-      Paint()
-        ..color = const Color(0xFF000000)
-        ..strokeWidth = 0.07,
+    canvas.drawCircle(
+      const Offset(-8, -5),
+      5,
+      Paint()..color = const Color(0xFFFFEB3B),
     );
-
-    // هالة عند الغضب
+    canvas.drawCircle(
+      const Offset(8, -5),
+      5,
+      Paint()..color = const Color(0xFFFFEB3B),
+    );
+    canvas.drawCircle(
+      const Offset(-8, -5),
+      2.5,
+      Paint()..color = const Color(0xFF000000),
+    );
+    canvas.drawCircle(
+      const Offset(8, -5),
+      2.5,
+      Paint()..color = const Color(0xFF000000),
+    );
     if (_isAggro) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          const Rect.fromLTWH(-0.7, -0.7, 1.4, 1.4),
-          const Radius.circular(8),
+          Rect.fromCenter(center: Offset.zero, width: 55, height: 55),
+          const Radius.circular(10),
         ),
         Paint()
-          ..color = const Color(0xFFFF1744).withValues(alpha: 0.35)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+          ..color = const Color(0xFFFF1744).withValues(alpha: 0.4)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
       );
     }
   }

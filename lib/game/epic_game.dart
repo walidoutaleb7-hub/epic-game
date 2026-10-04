@@ -1,7 +1,8 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
-import 'package:flame/components.dart' hide Vector2;
-import 'package:flame_forge2d/flame_forge2d.dart';
+import 'package:flame/components.dart';
+import 'package:flame/game.dart';
 
 import 'components/effects/damage_number.dart';
 import 'components/effects/dash_trail.dart';
@@ -22,16 +23,13 @@ import 'systems/achievement_system.dart';
 import 'systems/camera_shake.dart';
 import 'systems/dialogue_system.dart';
 import 'systems/level_manager.dart';
-import 'systems/particle_system.dart' as ps;
+import 'systems/particle_system.dart';
 import 'systems/save_system.dart';
 import 'utils/constants.dart';
 
-class EpicGame extends Forge2DGame {
-  EpicGame() : super(gravity: Vector2(0, GameConstants.gravity));
-
+class EpicGame extends FlameGame {
   late Player player;
-  late ps.ParticleSystem particles;
-  late ParallaxBackground background;
+  late ParticleSystem particles;
   final CameraShake cameraShake = CameraShake();
   final AchievementSystem achievements = AchievementSystem();
   final DialogueSystem dialogue = DialogueSystem();
@@ -51,88 +49,79 @@ class EpicGame extends Forge2DGame {
   double _projectileCooldown = 0;
   String _currentHint = '';
 
-  List<Component> _levelComponents = [];
+  final List<Ground> _grounds = [];
+
+  @override
+  Color backgroundColor() => const Color(0xFF0A0E27);
 
   @override
   Future<void> onLoad() async {
     await _buildLevel();
-    camera.follow(player);
-    camera.viewfinder.zoom = GameConstants.cameraZoom;
     overlays.add('mainMenu');
   }
 
   Future<void> _buildLevel() async {
-    for (final c in _levelComponents) {
-      c.removeFromParent();
-    }
-    _levelComponents.clear();
+    // حذف كل شيء ما عدا الجزيئات
+    children.whereType<Ground>().toList().forEach((c) => c.removeFromParent());
+    children.whereType<HookAnchor>().toList().forEach((c) => c.removeFromParent());
+    children.whereType<Coin>().toList().forEach((c) => c.removeFromParent());
+    children.whereType<HealthPotion>().toList().forEach((c) => c.removeFromParent());
+    children.whereType<BaseEnemy>().toList().forEach((c) => c.removeFromParent());
+    children.whereType<ChaserEnemy>().toList().forEach((c) => c.removeFromParent());
+    children.whereType<BossEnemy>().toList().forEach((c) => c.removeFromParent());
+    children.whereType<ParallaxBackground>().toList().forEach((c) => c.removeFromParent());
+    _grounds.clear();
 
     final data = levels.currentData;
 
-    background = ParallaxBackground();
-    await add(background);
-    _levelComponents.add(background);
+    await add(ParallaxBackground());
 
     for (int i = 0; i < data.groundPositions.length; i++) {
       final p = data.groundPositions[i];
       final s = data.groundSizes[i];
       final g = Ground(Vector2(p[0], p[1]), Vector2(s[0], s[1]));
       await add(g);
-      _levelComponents.add(g);
+      _grounds.add(g);
     }
 
-    final wallLeft = Ground(Vector2(-40, 0), Vector2(1, 24));
-    final wallRight = Ground(Vector2(40, 0), Vector2(1, 24));
-    await add(wallLeft);
-    await add(wallRight);
-    _levelComponents.add(wallLeft);
-    _levelComponents.add(wallRight);
+    // حيطان جانبية
+    final wl = Ground(Vector2(-400, 0), Vector2(20, 500));
+    final wr = Ground(Vector2(400, 0), Vector2(20, 500));
+    await add(wl);
+    await add(wr);
+    _grounds.add(wl);
+    _grounds.add(wr);
 
     for (final a in data.hookAnchors) {
-      final anchor = HookAnchor(Vector2(a[0], a[1]));
-      await add(anchor);
-      _levelComponents.add(anchor);
+      await add(HookAnchor(Vector2(a[0], a[1])));
     }
 
     for (final c in data.coins) {
-      final coin = Coin(Vector2(c[0], c[1]));
-      await add(coin);
-      _levelComponents.add(coin);
+      await add(Coin(Vector2(c[0], c[1])));
     }
 
     for (final spawn in data.enemies) {
       final pos = Vector2(spawn.x, spawn.y);
       if (spawn.type == 'base') {
-        final e = BaseEnemy(pos);
-        await add(e);
-        _levelComponents.add(e);
+        await add(BaseEnemy(pos));
       } else if (spawn.type == 'chaser') {
-        final e = ChaserEnemy(pos);
-        await add(e);
-        _levelComponents.add(e);
+        await add(ChaserEnemy(pos));
       } else if (spawn.type == 'boss') {
-        final e = BossEnemy(pos);
-        await add(e);
-        _levelComponents.add(e);
+        await add(BossEnemy(pos));
       }
     }
 
-    final p1 = HealthPotion(Vector2(-15, 4.5));
-    final p2 = HealthPotion(Vector2(15, -4.5));
-    await add(p1);
-    await add(p2);
-    _levelComponents.add(p1);
-    _levelComponents.add(p2);
+    await add(HealthPotion(Vector2(-150, 45)));
+    await add(HealthPotion(Vector2(150, -45)));
 
     player = Player(Vector2(data.playerStart[0], data.playerStart[1]));
     await add(player);
-    _levelComponents.add(player);
 
-    particles = ps.ParticleSystem();
+    particles = ParticleSystem();
     await add(particles);
-    _levelComponents.add(particles);
 
     camera.follow(player);
+    camera.viewfinder.zoom = GameConstants.cameraZoom;
   }
 
   void startGame() {
@@ -174,7 +163,6 @@ class EpicGame extends Forge2DGame {
     _buildLevel();
     overlays.remove('gameOver');
     overlays.add('hud');
-    resumeEngine();
     isPlaying = true;
   }
 
@@ -188,13 +176,11 @@ class EpicGame extends Forge2DGame {
     _buildLevel();
     overlays.remove('victory');
     overlays.add('hud');
-    resumeEngine();
     isPlaying = true;
   }
 
   void _showVictory() {
     isPlaying = false;
-    pauseEngine();
     overlays.remove('hud');
     overlays.add('victory');
   }
@@ -203,7 +189,6 @@ class EpicGame extends Forge2DGame {
     if (_dying) return;
     _dying = true;
     isPlaying = false;
-    pauseEngine();
     overlays.remove('hud');
     overlays.add('gameOver');
     SaveSystem.clear();
@@ -217,7 +202,6 @@ class EpicGame extends Forge2DGame {
   void pauseGame() {
     if (isPaused) return;
     isPaused = true;
-    pauseEngine();
     overlays.add('pauseMenu');
   }
 
@@ -225,7 +209,6 @@ class EpicGame extends Forge2DGame {
     if (!isPaused) return;
     isPaused = false;
     overlays.remove('pauseMenu');
-    resumeEngine();
   }
 
   void returnToMenu() {
@@ -236,7 +219,6 @@ class EpicGame extends Forge2DGame {
     overlays.remove('gameOver');
     overlays.remove('victory');
     overlays.add('mainMenu');
-    resumeEngine();
   }
 
   void movePlayer(double x) => player.setHorizontal(x);
@@ -245,12 +227,12 @@ class EpicGame extends Forge2DGame {
   void dashPlayer() {
     player.dash();
     particles.spawnBurst(
-      player.body.position.clone(),
+      player.position.clone(),
       count: 10,
       color: const Color(0xFF4FC3F7),
-      speed: 100,
+      speed: 200,
     );
-    add(DashTrail(player.body.position.clone()));
+    add(DashTrail(player.position.clone()));
   }
 
   void hookPlayer() {
@@ -259,21 +241,21 @@ class EpicGame extends Forge2DGame {
       return;
     }
     HookAnchor? nearest;
-    double minDist = 12.0;
+    double minDist = 400;
     for (final anchor in children.whereType<HookAnchor>()) {
-      final d = (anchor.body.position - player.body.position).length;
+      final d = (anchor.position - player.position).length;
       if (d < minDist) {
         minDist = d;
         nearest = anchor;
       }
     }
     if (nearest != null) {
-      player.startHook(nearest.body.position.clone());
+      player.startHook(nearest.position.clone());
       particles.spawnBurst(
-        player.body.position.clone(),
+        player.position.clone(),
         count: 8,
         color: const Color(0xFFFFD700),
-        speed: 80,
+        speed: 150,
       );
     }
   }
@@ -282,62 +264,45 @@ class EpicGame extends Forge2DGame {
     if (_projectileCooldown > 0) return;
     _projectileCooldown = 0.35;
     final dir = Vector2(player.isFacingRight ? 1 : -1, 0);
-    final spawnPos = player.body.position + dir * 0.8;
-    add(Projectile(spawnPos, dir));
-    particles.spawnBurst(
-      spawnPos,
-      count: 5,
-      color: const Color(0xFFFFD700),
-      speed: 60,
-    );
+    add(Projectile(player.position.clone(), dir));
   }
 
   void attackPlayer() {
     player.attack();
     final dir = player.isFacingRight ? 1.0 : -1.0;
-    final attackPos = player.body.position + Vector2(dir * 1.0, 0);
+    final attackPos = player.position + Vector2(dir * 40, 0);
     add(HitEffect(attackPos));
-    particles.spawnBurst(
-      attackPos,
-      count: 8,
-      color: const Color(0xFFFFD700),
-      speed: 130,
-    );
-    _damageEnemiesNear(attackPos, 1.3, 2.2, 20, 15);
+    particles.spawnBurst(attackPos, count: 8, color: const Color(0xFFFFD700), speed: 200);
+    _damageEnemiesNear(attackPos, 60, 100, 20, 15);
   }
 
   void _damageEnemiesNear(
-    Vector2 pos,
-    double range1,
-    double range2,
-    int baseDmg,
-    int variance,
-  ) {
-    for (final child in children.whereType<BaseEnemy>()) {
-      if ((child.body.position - pos).length < range1) {
+    Vector2 pos, double range1, double range2, int baseDmg, int variance) {
+    for (final e in children.whereType<BaseEnemy>()) {
+      if ((e.position - pos).length < range1) {
         final dmg = baseDmg + _rng.nextInt(variance);
         final isCrit = _rng.nextDouble() < 0.2;
-        final finalDmg = isCrit ? dmg * 2 : dmg;
-        child.takeDamage(finalDmg);
-        add(DamageNumber(child.body.position.clone(), finalDmg, isCrit: isCrit));
-        cameraShake.shake(intensity: isCrit ? 0.8 : 0.4, duration: 0.25);
-        if (child.health <= 0) _onEnemyKilled();
+        final fd = isCrit ? dmg * 2 : dmg;
+        e.takeDamage(fd);
+        add(DamageNumber(e.position.clone(), fd, isCrit: isCrit));
+        cameraShake.shake(intensity: isCrit ? 8 : 4, duration: 0.25);
+        if (e.health <= 0) _onEnemyKilled();
       }
     }
-    for (final child in children.whereType<ChaserEnemy>()) {
-      if ((child.body.position - pos).length < range1) {
+    for (final e in children.whereType<ChaserEnemy>()) {
+      if ((e.position - pos).length < range1) {
         final dmg = baseDmg + _rng.nextInt(variance);
-        child.takeDamage(dmg);
-        add(DamageNumber(child.body.position.clone(), dmg));
-        if (child.health <= 0) _onEnemyKilled();
+        e.takeDamage(dmg);
+        add(DamageNumber(e.position.clone(), dmg));
+        if (e.health <= 0) _onEnemyKilled();
       }
     }
-    for (final child in children.whereType<BossEnemy>()) {
-      if ((child.body.position - pos).length < range2) {
+    for (final e in children.whereType<BossEnemy>()) {
+      if ((e.position - pos).length < range2) {
         final dmg = baseDmg + _rng.nextInt(variance);
-        child.takeDamage(dmg);
-        add(DamageNumber(child.body.position.clone(), dmg));
-        cameraShake.shake(intensity: 0.6, duration: 0.3);
+        e.takeDamage(dmg);
+        add(DamageNumber(e.position.clone(), dmg));
+        cameraShake.shake(intensity: 6, duration: 0.3);
       }
     }
   }
@@ -349,7 +314,6 @@ class EpicGame extends Forge2DGame {
     achievements.register('first_blood', 1);
     achievements.register('hunter', 1);
     achievements.register('slayer', 1);
-
     if (levels.canAdvance && !_dying) {
       Future.delayed(const Duration(milliseconds: 500), () {
         if (isPlaying) _showVictory();
@@ -361,12 +325,7 @@ class EpicGame extends Forge2DGame {
     coinsCollected++;
     score += 10;
     levels.registerCoin();
-    particles.spawnBurst(
-      pos,
-      count: 6,
-      color: GameConstants.goldColor,
-      speed: 80,
-    );
+    particles.spawnBurst(pos, count: 6, color: GameConstants.goldColor, speed: 150);
     achievements.register('collector', 1);
     achievements.register('treasure', 1);
   }
@@ -374,11 +333,7 @@ class EpicGame extends Forge2DGame {
   void healPlayer(int amount) {
     health = (health + amount).clamp(0, maxHealth);
     particles.spawnBurst(
-      player.body.position.clone(),
-      count: 15,
-      color: const Color(0xFF4CAF50),
-      speed: 120,
-    );
+      player.position.clone(), count: 15, color: const Color(0xFF4CAF50), speed: 200);
   }
 
   @override
@@ -388,75 +343,106 @@ class EpicGame extends Forge2DGame {
 
     cameraShake.update(dt);
     if (cameraShake.isActive) {
-      camera.viewfinder.position =
-          player.body.position + cameraShake.offset;
+      camera.viewfinder.position = player.position + cameraShake.offset;
     }
 
     if (!isPlaying) return;
-
     if (health <= 0 && !_dying) {
       _triggerGameOver();
       return;
     }
 
+    // فحص التصادم مع الأرضيات
+    bool grounded = false;
+    for (final g in _grounds) {
+      if (player.checkCollides(g.rect)) {
+        // تحديد الاتجاه
+        final pRect = Rect.fromCenter(
+          center: Offset(player.position.x, player.position.y),
+          width: player.size.x,
+          height: player.size.y,
+        );
+        final gRect = g.rect;
+        // ارتداد
+        if (player.velocity.y > 0 &&
+            pRect.bottom > gRect.top &&
+            pRect.bottom < gRect.top + 30) {
+          player.position.y = gRect.top - player.size.y / 2;
+          player.velocity.y = 0;
+          grounded = true;
+        } else if (player.velocity.y < 0 &&
+            pRect.top < gRect.bottom &&
+            pRect.top > gRect.bottom - 30) {
+          player.position.y = gRect.bottom + player.size.y / 2;
+          player.velocity.y = 0;
+        } else if (player.velocity.x > 0) {
+          player.position.x = gRect.left - player.size.x / 2;
+          player.velocity.x = 0;
+        } else if (player.velocity.x < 0) {
+          player.position.x = gRect.right + player.size.x / 2;
+          player.velocity.x = 0;
+        }
+      }
+    }
+    player.setGrounded(grounded);
+
+    // العملات
     for (final coin in children.whereType<Coin>().toList()) {
       if (coin.collected) continue;
-      if ((coin.body.position - player.body.position).length < 0.8) {
+      if ((coin.position - player.position).length < 30) {
         coin.collected = true;
-        collectCoin(coin.body.position);
+        collectCoin(coin.position.clone());
         coin.removeFromParent();
       }
     }
 
+    // قوارير صحة
     for (final potion in children.whereType<HealthPotion>().toList()) {
-      if ((potion.body.position - player.body.position).length < 0.8) {
+      if ((potion.position - player.position).length < 35) {
         healPlayer(30);
         potion.removeFromParent();
       }
     }
 
-    for (final enemy in children.whereType<BaseEnemy>()) {
-      if ((enemy.body.position - player.body.position).length < 1.0) {
+    // ضرر الأعداء
+    for (final e in children.whereType<BaseEnemy>()) {
+      if ((e.position - player.position).length < 35) {
         health = (health - 1).clamp(0, maxHealth);
       }
     }
-    for (final enemy in children.whereType<ChaserEnemy>()) {
-      if ((enemy.body.position - player.body.position).length < 1.0) {
+    for (final e in children.whereType<ChaserEnemy>()) {
+      if ((e.position - player.position).length < 40) {
         health = (health - 2).clamp(0, maxHealth);
       }
     }
-    for (final enemy in children.whereType<BossEnemy>()) {
-      if ((enemy.body.position - player.body.position).length < 2.0) {
+    for (final e in children.whereType<BossEnemy>()) {
+      if ((e.position - player.position).length < 80) {
         health = (health - 3).clamp(0, maxHealth);
       }
     }
 
+    // القذائف
     for (final proj in children.whereType<Projectile>().toList()) {
-      for (final enemy in children.whereType<BaseEnemy>()) {
-        if ((proj.body.position - enemy.body.position).length < 0.6) {
-          enemy.takeDamage(30);
-          add(DamageNumber(enemy.body.position.clone(), 30));
+      for (final e in children.whereType<BaseEnemy>()) {
+        if ((proj.position - e.position).length < 30) {
+          e.takeDamage(30);
+          add(DamageNumber(e.position.clone(), 30));
           proj.removeFromParent();
-          if (enemy.health <= 0) _onEnemyKilled();
+          if (e.health <= 0) _onEnemyKilled();
           break;
         }
       }
     }
 
+    // Hook anchors
     for (final anchor in children.whereType<HookAnchor>()) {
-      anchor.isInRange =
-          (anchor.body.position - player.body.position).length < 12.0;
+      anchor.isInRange = (anchor.position - player.position).length < 400;
     }
 
     _autoSaveTimer += dt;
     if (_autoSaveTimer >= 10) {
       _autoSaveTimer = 0;
-      SaveSystem.save(
-        level: levels.currentLevel,
-        score: score,
-        health: health,
-        inventory: const [],
-      );
+      SaveSystem.save(level: levels.currentLevel, score: score, health: health, inventory: const []);
     }
   }
 

@@ -16,7 +16,6 @@ class SaveSystem {
       'score': score,
       'health': health,
       'inventory': inventory,
-      'timestamp': DateTime.now().toIso8601String(),
     });
     await prefs.setString(_key, data);
   }

@@ -30,22 +30,6 @@ class DialogueSystem {
         choiceB: 'لست مستعدًا بعد',
       ),
     ],
-    'first_kill': [
-      DialogueLine(
-        speaker: 'البطل',
-        text: 'هذا كان سهلًا... لكن الأصعب قادم.',
-      ),
-    ],
-    'boss_intro': [
-      DialogueLine(
-        speaker: 'الزعيم',
-        text: 'أيها الجرذ الصغير... تجرؤ على مواجهتي؟',
-      ),
-      DialogueLine(
-        speaker: 'البطل',
-        text: 'سأُنهي عهدك الظالم!',
-      ),
-    ],
   };
 
   List<DialogueLine>? getDialogue(String key) => _dialogues[key];
