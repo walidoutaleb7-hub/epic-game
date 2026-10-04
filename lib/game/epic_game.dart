@@ -1,7 +1,6 @@
-import 'dart:ui';
 import 'dart:math' as math;
 
-import 'package:flame/components.dart';
+import 'package:flame/components.dart' hide Vector2;
 import 'package:flame_forge2d/flame_forge2d.dart';
 
 import 'components/effects/damage_number.dart';
@@ -63,7 +62,6 @@ class EpicGame extends Forge2DGame {
   }
 
   Future<void> _buildLevel() async {
-    // تنظيف المستوى القديم
     for (final c in _levelComponents) {
       c.removeFromParent();
     }
@@ -75,14 +73,14 @@ class EpicGame extends Forge2DGame {
     await add(background);
     _levelComponents.add(background);
 
-    // الأرضيات
     for (int i = 0; i < data.groundPositions.length; i++) {
-      final g = Ground(data.groundPositions[i], data.groundSizes[i]);
+      final p = data.groundPositions[i];
+      final s = data.groundSizes[i];
+      final g = Ground(Vector2(p[0], p[1]), Vector2(s[0], s[1]));
       await add(g);
       _levelComponents.add(g);
     }
 
-    // حيطان جانبية
     final wallLeft = Ground(Vector2(-40, 0), Vector2(1, 24));
     final wallRight = Ground(Vector2(40, 0), Vector2(1, 24));
     await add(wallLeft);
@@ -90,38 +88,35 @@ class EpicGame extends Forge2DGame {
     _levelComponents.add(wallLeft);
     _levelComponents.add(wallRight);
 
-    // نقاط الخطاف
-    for (final anchor in data.hookAnchors) {
-      final a = HookAnchor(anchor);
-      await add(a);
-      _levelComponents.add(a);
+    for (final a in data.hookAnchors) {
+      final anchor = HookAnchor(Vector2(a[0], a[1]));
+      await add(anchor);
+      _levelComponents.add(anchor);
     }
 
-    // العملات
-    for (final coin in data.coins) {
-      final c = Coin(coin);
-      await add(c);
-      _levelComponents.add(c);
+    for (final c in data.coins) {
+      final coin = Coin(Vector2(c[0], c[1]));
+      await add(coin);
+      _levelComponents.add(coin);
     }
 
-    // الأعداء
     for (final spawn in data.enemies) {
+      final pos = Vector2(spawn.x, spawn.y);
       if (spawn.type == 'base') {
-        final e = BaseEnemy(spawn.position);
+        final e = BaseEnemy(pos);
         await add(e);
         _levelComponents.add(e);
       } else if (spawn.type == 'chaser') {
-        final e = ChaserEnemy(spawn.position);
+        final e = ChaserEnemy(pos);
         await add(e);
         _levelComponents.add(e);
       } else if (spawn.type == 'boss') {
-        final e = BossEnemy(spawn.position);
+        final e = BossEnemy(pos);
         await add(e);
         _levelComponents.add(e);
       }
     }
 
-    // قوارير صحة
     final p1 = HealthPotion(Vector2(-15, 4.5));
     final p2 = HealthPotion(Vector2(15, -4.5));
     await add(p1);
@@ -129,12 +124,10 @@ class EpicGame extends Forge2DGame {
     _levelComponents.add(p1);
     _levelComponents.add(p2);
 
-    // اللاعب
-    player = Player(data.playerStart);
+    player = Player(Vector2(data.playerStart[0], data.playerStart[1]));
     await add(player);
     _levelComponents.add(player);
 
-    // الجزيئات
     particles = ps.ParticleSystem();
     await add(particles);
     _levelComponents.add(particles);
@@ -182,6 +175,7 @@ class EpicGame extends Forge2DGame {
     overlays.remove('gameOver');
     overlays.add('hud');
     resumeEngine();
+    isPlaying = true;
   }
 
   void nextLevel() {
@@ -195,6 +189,7 @@ class EpicGame extends Forge2DGame {
     overlays.remove('victory');
     overlays.add('hud');
     resumeEngine();
+    isPlaying = true;
   }
 
   void _showVictory() {
@@ -355,7 +350,6 @@ class EpicGame extends Forge2DGame {
     achievements.register('hunter', 1);
     achievements.register('slayer', 1);
 
-    // فحص الإنجاز
     if (levels.canAdvance && !_dying) {
       Future.delayed(const Duration(milliseconds: 500), () {
         if (isPlaying) _showVictory();
@@ -394,12 +388,12 @@ class EpicGame extends Forge2DGame {
 
     cameraShake.update(dt);
     if (cameraShake.isActive) {
-      camera.viewfinder.position = player.body.position + cameraShake.offset;
+      camera.viewfinder.position =
+          player.body.position + cameraShake.offset;
     }
 
     if (!isPlaying) return;
 
-    // فحص الموت
     if (health <= 0 && !_dying) {
       _triggerGameOver();
       return;

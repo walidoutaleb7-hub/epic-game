@@ -1,5 +1,4 @@
 import 'package:flame/components.dart';
-import 'package:flame/flame.dart';
 
 import 'player_state.dart';
 
@@ -26,48 +25,32 @@ class PlayerAnimation extends SpriteAnimationComponent {
 
   @override
   Future<void> onLoad() async {
-    idle = await _loadAnim('Idle (32x32).png', 11, 0.12);
-    run = await _loadAnim('Run (32x32).png', 12, 0.06);
-    jump = await _loadAnim('Jump (32x32).png', 1, 0.1);
-    fall = await _loadAnim('Fall (32x32).png', 1, 0.1);
-    doubleJump = await _loadAnim('Double Jump (32x32).png', 6, 0.08);
-    hit = await _loadAnim('Hit (32x32).png', 7, 0.1);
-    wallJump = await _loadAnim('Wall Jump (32x32).png', 5, 0.08);
+    idle = await _load('Idle (32x32).png', 11, 0.12);
+    run = await _load('Run (32x32).png', 12, 0.06);
+    jump = await _load('Jump (32x32).png', 1, 0.1);
+    fall = await _load('Fall (32x32).png', 1, 0.1);
+    doubleJump = await _load('Double Jump (32x32).png', 6, 0.08);
+    hit = await _load('Hit (32x32).png', 7, 0.1);
+    wallJump = await _load('Wall Jump (32x32).png', 5, 0.08);
 
     animation = idle;
   }
 
-  Future<SpriteAnimation> _loadAnim(
-    String file,
-    int frames,
-    double stepTime,
-  ) async {
-    try {
-      return await SpriteAnimation.load(
-        '$_basePath$file',
-        SpriteAnimationData.sequenced(
-          amount: frames,
-          stepTime: stepTime,
-          textureSize: Vector2(32, 32),
-        ),
-      );
-    } catch (_) {
-      // fallback إذا ما لقاش الملف
-      return SpriteAnimation.fromFrameData(
-        await Flame.images.load('$_basePathIdle (32x32).png'),
-        SpriteAnimationData.sequenced(
-          amount: 11,
-          stepTime: 0.12,
-          textureSize: Vector2(32, 32),
-        ),
-      );
-    }
+  Future<SpriteAnimation> _load(String file, int frames, double stepTime) async {
+    return await SpriteAnimation.load(
+      '$_basePath$file',
+      SpriteAnimationData.sequenced(
+        amount: frames,
+        stepTime: stepTime,
+        textureSize: Vector2(32, 32),
+      ),
+    );
   }
 
-  void playState(PlayerState state, {bool facingRight = true, bool isHit = false}) {
+  void playState(PlayerState state,
+      {bool facingRight = true, bool isHit = false}) {
     _facingRight = facingRight;
 
-    // الأولوية للضربة
     if (isHit && !_wasHit) {
       _wasHit = true;
       animation = hit;
@@ -109,7 +92,6 @@ class PlayerAnimation extends SpriteAnimationComponent {
   @override
   void update(double dt) {
     super.update(dt);
-    // قلب الـ sprite حسب الاتجاه
     scale.x = _facingRight ? 1.0 : -1.0;
   }
 }
