@@ -24,6 +24,11 @@ jobs:
       - name: Generate Flutter project files
         run: flutter create . --project-name epic_game --platforms android
       
+      - name: Update Kotlin version
+        run: |
+          sed -i 's/org.jetbrains.kotlin.android" version ".*"/org.jetbrains.kotlin.android" version "2.0.0"/' android/settings.gradle
+          sed -i "s/ext.kotlin_version = '.*'/ext.kotlin_version = '2.0.0'/" android/build.gradle
+      
       - name: Install dependencies
         run: flutter pub get
       
