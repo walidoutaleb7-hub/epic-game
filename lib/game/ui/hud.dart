@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../epic_game.dart';
+import '../emberfall_game.dart';
 
 class HudOverlay extends StatelessWidget {
-  final EpicGame game;
+  final EmberfallGame game;
   const HudOverlay({super.key, required this.game});
 
   @override

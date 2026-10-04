@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../epic_game.dart';
+import '../emberfall_game.dart';
 import 'particle_background.dart';
 
 class MainMenuOverlay extends StatelessWidget {
-  final EpicGame game;
+  final EmberfallGame game;
   const MainMenuOverlay({super.key, required this.game});
 
   @override
@@ -106,7 +106,7 @@ class MainMenuOverlay extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       Text(
-                        'EPIC',
+                        'EMBER',
                         style: GoogleFonts.cinzel(
                           fontSize: 96,
                           fontWeight: FontWeight.bold,
@@ -126,7 +126,7 @@ class MainMenuOverlay extends StatelessWidget {
                           .slideX(begin: -0.3, end: 0),
 
                       Text(
-                        'S T O R Y',
+                        'F A L L',
                         style: GoogleFonts.cinzel(
                           fontSize: 32,
                           color: Colors.white70,
@@ -138,7 +138,7 @@ class MainMenuOverlay extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       Text(
-                        'An epic journey awaits...',
+                        'An ember burns in the dark...',
                         style: GoogleFonts.cinzel(
                           fontSize: 14,
                           color: const Color(0xFF8899BB),

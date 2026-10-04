@@ -55,7 +55,7 @@ class SplashScreenOverlay extends StatelessWidget {
 
             // EPIC
             Text(
-              'EPIC',
+              'EMBER',
               style: GoogleFonts.cinzel(
                 fontSize: 72,
                 fontWeight: FontWeight.bold,
@@ -75,7 +75,7 @@ class SplashScreenOverlay extends StatelessWidget {
 
             // STORY
             Text(
-              'S T O R Y',
+              'F A L L',
               style: GoogleFonts.cinzel(
                 fontSize: 24,
                 color: Colors.white70,

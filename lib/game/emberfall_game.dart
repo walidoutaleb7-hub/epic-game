@@ -26,7 +26,7 @@ import 'systems/particle_system.dart';
 import 'systems/save_system.dart';
 import 'utils/constants.dart';
 
-class EpicGame extends FlameGame {
+class EmberfallGame extends FlameGame {
   late Player player;
   late ParticleSystem particles;
   final CameraShake cameraShake = CameraShake();

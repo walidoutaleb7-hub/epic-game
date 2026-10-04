@@ -2,7 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'game/epic_game.dart';
+import 'game/emberfall_game.dart';
 import 'game/ui/achievements_panel.dart';
 import 'game/ui/dialogue_box.dart';
 import 'game/ui/game_over_screen.dart';
@@ -21,16 +21,16 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  runApp(const EpicGameApp());
+  runApp(const EmberfallApp());
 }
 
-class EpicGameApp extends StatelessWidget {
-  const EpicGameApp({super.key});
+class EmberfallApp extends StatelessWidget {
+  const EmberfallApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Epic Story',
+      title: 'Emberfall',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(brightness: Brightness.dark),
       home: const GameWrapper(),
@@ -46,13 +46,13 @@ class GameWrapper extends StatefulWidget {
 }
 
 class _GameWrapperState extends State<GameWrapper> {
-  late final EpicGame _game;
+  late final EmberfallGame _game;
   bool _showSplash = true;
 
   @override
   void initState() {
     super.initState();
-    _game = EpicGame();
+    _game = EmberfallGame();
     _game.overlays.add('splash');
     Future.delayed(const Duration(seconds: 4), () {
       if (!mounted) return;
@@ -64,7 +64,7 @@ class _GameWrapperState extends State<GameWrapper> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GameWidget<EpicGame>(
+      body: GameWidget<EmberfallGame>(
         game: _game,
         overlayBuilderMap: {
           'splash': (context, game) => const SplashScreenOverlay(),
