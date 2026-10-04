@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flame/components.dart';
 
 import 'player_animation.dart';
@@ -25,14 +23,13 @@ class Player extends PositionComponent with HasGameReference {
   bool _facingRight = true;
   bool _isHooking = false;
   Vector2? _hookTarget;
-  Vector2? _hookFrom;
 
   late PlayerAnimation anim;
 
   Player(Vector2 position)
       : super(
           position: position,
-          size: Vector2(40, 50),
+          size: Vector2(48, 48),
           anchor: Anchor.center,
         );
 
@@ -46,8 +43,12 @@ class Player extends PositionComponent with HasGameReference {
   bool get isFacingRight => _facingRight;
   bool get isHooking => _isHooking;
   Vector2? get hookTarget => _hookTarget;
-  Vector2? get hookFrom => _hookFrom;
   bool get isHit => _hitTimer > 0;
+  Rect get rect => Rect.fromCenter(
+        center: Offset(position.x, position.y),
+        width: size.x,
+        height: size.y,
+      );
 
   void setHorizontal(double x) {
     _horizontalInput = x;
@@ -79,28 +80,16 @@ class Player extends PositionComponent with HasGameReference {
     if (_isHooking) return;
     _isHooking = true;
     _hookTarget = target.clone();
-    _hookFrom = position.clone();
   }
 
   void releaseHook() {
     _isHooking = false;
     _hookTarget = null;
-    _hookFrom = null;
   }
 
-  /// فحص الأرضيات — يُستدعى من اللعبة
   void setGrounded(bool g) {
     _isGrounded = g;
     if (g) _canDoubleJump = true;
-  }
-
-  bool checkCollides(Rect other) {
-    final myRect = Rect.fromCenter(
-      center: Offset(position.x, position.y),
-      width: size.x,
-      height: size.y,
-    );
-    return myRect.overlaps(other);
   }
 
   @override
@@ -114,13 +103,11 @@ class Player extends PositionComponent with HasGameReference {
 
     if (_isHooking && _hookTarget != null) {
       final diff = _hookTarget! - position;
-      final d = diff.length;
-      if (d < 15) {
+      if (diff.length < 20) {
         releaseHook();
         velocity *= 0.3;
       } else {
-        final dir = diff.normalized();
-        velocity = dir * _hookPull;
+        velocity = diff.normalized() * _hookPull;
       }
       _state = PlayerState.hooking;
       position += velocity * dt;
@@ -141,11 +128,9 @@ class Player extends PositionComponent with HasGameReference {
       if (velocity.y > _maxFall) velocity.y = _maxFall;
 
       if (_isGrounded) {
-        if (_horizontalInput.abs() > 0.15) {
-          _state = PlayerState.running;
-        } else {
-          _state = PlayerState.idle;
-        }
+        _state = _horizontalInput.abs() > 0.15
+            ? PlayerState.running
+            : PlayerState.idle;
       } else {
         _state = velocity.y < 0 ? PlayerState.jumping : PlayerState.falling;
       }

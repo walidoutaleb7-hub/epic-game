@@ -1,9 +1,7 @@
-import 'package:flame/components.dart';
-
 class EnemySpawn {
   final double x;
   final double y;
-  final String type; // 'base', 'chaser', 'boss'
+  final String type;
   EnemySpawn(this.x, this.y, this.type);
 }
 
@@ -11,7 +9,7 @@ class LevelData {
   final int id;
   final String name;
   final String biome;
-  final List<double> playerStart; // [x, y]
+  final List<double> playerStart;
   final List<List<double>> groundPositions;
   final List<List<double>> groundSizes;
   final List<List<double>> hookAnchors;
@@ -34,28 +32,35 @@ class LevelData {
 }
 
 class LevelDatabase {
+  // كل الإحداثيات مضروبة في 30 باش تكون مرئية
+  static const double S = 30.0;
+
   static final List<LevelData> levels = [
     LevelData(
       id: 1,
       name: 'الغابة المظلمة',
       biome: 'forest',
-      playerStart: [0, 6],
+      playerStart: [0, 6 * S],
       groundPositions: [
-        [0, 8], [-14, 2], [14, -2], [0, -6], [-25, -2], [25, 2],
+        [0, 8 * S], [-14 * S, 2 * S], [14 * S, -2 * S], [0, -6 * S],
+        [-25 * S, -2 * S], [25 * S, 2 * S],
       ],
       groundSizes: [
-        [80, 1], [6, 0.5], [6, 0.5], [5, 0.5], [4, 0.5], [4, 0.5],
+        [80 * S, 1 * S], [6 * S, 0.5 * S], [6 * S, 0.5 * S],
+        [5 * S, 0.5 * S], [4 * S, 0.5 * S], [4 * S, 0.5 * S],
       ],
       hookAnchors: [
-        [-6, -3], [6, -3], [0, -12],
+        [-6 * S, -3 * S], [6 * S, -3 * S], [0, -12 * S],
       ],
       coins: [
-        [-20, 5.5], [-16, 5.5], [-12, 5.5], [-8, 5.5], [-4, 5.5],
-        [0, 5.5], [4, 5.5], [8, 5.5], [12, 5.5], [16, 5.5], [20, 5.5],
+        [-20 * S, 5.5 * S], [-16 * S, 5.5 * S], [-12 * S, 5.5 * S],
+        [-8 * S, 5.5 * S], [-4 * S, 5.5 * S], [0, 5.5 * S],
+        [4 * S, 5.5 * S], [8 * S, 5.5 * S], [12 * S, 5.5 * S],
+        [16 * S, 5.5 * S], [20 * S, 5.5 * S],
       ],
       enemies: [
-        EnemySpawn(-18, 6, 'base'),
-        EnemySpawn(18, -5, 'base'),
+        EnemySpawn(-18 * S, 6 * S, 'base'),
+        EnemySpawn(18 * S, -5 * S, 'base'),
       ],
       targetKills: 2,
     ),
@@ -63,27 +68,31 @@ class LevelDatabase {
       id: 2,
       name: 'كهوف الظلام',
       biome: 'cave',
-      playerStart: [0, 6],
+      playerStart: [0, 6 * S],
       groundPositions: [
-        [0, 8], [-10, 2], [10, 2], [-18, -4], [18, -4], [0, -8],
-        [-30, 0], [30, 0],
+        [0, 8 * S], [-10 * S, 2 * S], [10 * S, 2 * S],
+        [-18 * S, -4 * S], [18 * S, -4 * S], [0, -8 * S],
+        [-30 * S, 0], [30 * S, 0],
       ],
       groundSizes: [
-        [80, 1], [5, 0.5], [5, 0.5], [5, 0.5], [5, 0.5], [6, 0.5],
-        [4, 0.5], [4, 0.5],
+        [80 * S, 1 * S], [5 * S, 0.5 * S], [5 * S, 0.5 * S],
+        [5 * S, 0.5 * S], [5 * S, 0.5 * S], [6 * S, 0.5 * S],
+        [4 * S, 0.5 * S], [4 * S, 0.5 * S],
       ],
       hookAnchors: [
-        [-14, -2], [14, -2], [-5, -6], [5, -6], [0, -14],
+        [-14 * S, -2 * S], [14 * S, -2 * S], [-5 * S, -6 * S],
+        [5 * S, -6 * S], [0, -14 * S],
       ],
       coins: [
-        [-25, 5.5], [-20, 5.5], [-15, 5.5], [-10, 5.5], [-5, 5.5],
-        [0, 5.5], [5, 5.5], [10, 5.5], [15, 5.5], [20, 5.5], [25, 5.5],
-        [-18, -6], [18, -6],
+        [-25 * S, 5.5 * S], [-20 * S, 5.5 * S], [-15 * S, 5.5 * S],
+        [-10 * S, 5.5 * S], [-5 * S, 5.5 * S], [0, 5.5 * S],
+        [5 * S, 5.5 * S], [10 * S, 5.5 * S], [15 * S, 5.5 * S],
+        [20 * S, 5.5 * S], [25 * S, 5.5 * S],
       ],
       enemies: [
-        EnemySpawn(-20, 6, 'base'),
-        EnemySpawn(20, 6, 'chaser'),
-        EnemySpawn(0, -10, 'chaser'),
+        EnemySpawn(-20 * S, 6 * S, 'base'),
+        EnemySpawn(20 * S, 6 * S, 'chaser'),
+        EnemySpawn(0, -10 * S, 'chaser'),
       ],
       targetKills: 3,
     ),
@@ -91,25 +100,30 @@ class LevelDatabase {
       id: 3,
       name: 'قلعة الزعيم',
       biome: 'castle',
-      playerStart: [0, 6],
+      playerStart: [0, 6 * S],
       groundPositions: [
-        [0, 8], [-15, 0], [15, 0], [0, -6], [-25, -6], [25, -6],
+        [0, 8 * S], [-15 * S, 0], [15 * S, 0],
+        [0, -6 * S], [-25 * S, -6 * S], [25 * S, -6 * S],
       ],
       groundSizes: [
-        [80, 1], [6, 0.5], [6, 0.5], [8, 0.5], [4, 0.5], [4, 0.5],
+        [80 * S, 1 * S], [6 * S, 0.5 * S], [6 * S, 0.5 * S],
+        [8 * S, 0.5 * S], [4 * S, 0.5 * S], [4 * S, 0.5 * S],
       ],
       hookAnchors: [
-        [-20, -2], [20, -2], [-8, -10], [8, -10],
+        [-20 * S, -2 * S], [20 * S, -2 * S], [-8 * S, -10 * S],
+        [8 * S, -10 * S],
       ],
       coins: [
-        [-30, 5.5], [-25, 5.5], [-20, 5.5], [-15, 5.5], [-10, 5.5],
-        [-5, 5.5], [0, 5.5], [5, 5.5], [10, 5.5], [15, 5.5],
-        [20, 5.5], [25, 5.5], [30, 5.5],
+        [-30 * S, 5.5 * S], [-25 * S, 5.5 * S], [-20 * S, 5.5 * S],
+        [-15 * S, 5.5 * S], [-10 * S, 5.5 * S], [-5 * S, 5.5 * S],
+        [0, 5.5 * S], [5 * S, 5.5 * S], [10 * S, 5.5 * S],
+        [15 * S, 5.5 * S], [20 * S, 5.5 * S], [25 * S, 5.5 * S],
+        [30 * S, 5.5 * S],
       ],
       enemies: [
-        EnemySpawn(-15, -2, 'chaser'),
-        EnemySpawn(15, -2, 'chaser'),
-        EnemySpawn(0, -12, 'boss'),
+        EnemySpawn(-15 * S, -2 * S, 'chaser'),
+        EnemySpawn(15 * S, -2 * S, 'chaser'),
+        EnemySpawn(0, -12 * S, 'boss'),
       ],
       targetKills: 3,
     ),

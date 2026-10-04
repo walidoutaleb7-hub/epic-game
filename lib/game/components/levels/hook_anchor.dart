@@ -22,26 +22,15 @@ class HookAnchor extends PositionComponent {
     final pulse = math.sin(_t) * 0.15 + 1.0;
     final color = isInRange ? const Color(0xFFFFD700) : const Color(0xFF90A4AE);
 
-    canvas.drawCircle(
-      Offset.zero,
-      radius * 1.8 * pulse,
-      Paint()
-        ..color = color.withValues(alpha: isInRange ? 0.5 : 0.25)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
-    );
-    canvas.drawCircle(
-      Offset.zero,
-      radius,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3,
-    );
+    canvas.drawCircle(Offset.zero, radius * 1.8 * pulse,
+        Paint()..color = color.withValues(alpha: isInRange ? 0.5 : 0.25)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12));
+    canvas.drawCircle(Offset.zero, radius,
+        Paint()..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3);
     canvas.drawCircle(Offset.zero, radius * 0.5, Paint()..color = color);
-    canvas.drawCircle(
-      Offset.zero,
-      radius * 0.2,
-      Paint()..color = const Color(0xFFFFFFFF),
-    );
+    canvas.drawCircle(Offset.zero, radius * 0.2,
+        Paint()..color = const Color(0xFFFFFFFF));
   }
 }

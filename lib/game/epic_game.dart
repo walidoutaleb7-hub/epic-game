@@ -18,7 +18,6 @@ import 'components/levels/parallax_background.dart';
 import 'components/player/player.dart';
 import 'components/player/player_state.dart';
 import 'components/player/projectile.dart';
-import 'data/level_data.dart';
 import 'systems/achievement_system.dart';
 import 'systems/camera_shake.dart';
 import 'systems/dialogue_system.dart';
@@ -61,7 +60,6 @@ class EpicGame extends FlameGame {
   }
 
   Future<void> _buildLevel() async {
-    // حذف كل شيء ما عدا الجزيئات
     children.whereType<Ground>().toList().forEach((c) => c.removeFromParent());
     children.whereType<HookAnchor>().toList().forEach((c) => c.removeFromParent());
     children.whereType<Coin>().toList().forEach((c) => c.removeFromParent());
@@ -84,9 +82,9 @@ class EpicGame extends FlameGame {
       _grounds.add(g);
     }
 
-    // حيطان جانبية
-    final wl = Ground(Vector2(-400, 0), Vector2(20, 500));
-    final wr = Ground(Vector2(400, 0), Vector2(20, 500));
+    // حيطان
+    final wl = Ground(Vector2(-400 * 30, 0), Vector2(20, 500));
+    final wr = Ground(Vector2(400 * 30, 0), Vector2(20, 500));
     await add(wl);
     await add(wr);
     _grounds.add(wl);
@@ -95,24 +93,18 @@ class EpicGame extends FlameGame {
     for (final a in data.hookAnchors) {
       await add(HookAnchor(Vector2(a[0], a[1])));
     }
-
     for (final c in data.coins) {
       await add(Coin(Vector2(c[0], c[1])));
     }
-
     for (final spawn in data.enemies) {
       final pos = Vector2(spawn.x, spawn.y);
-      if (spawn.type == 'base') {
-        await add(BaseEnemy(pos));
-      } else if (spawn.type == 'chaser') {
-        await add(ChaserEnemy(pos));
-      } else if (spawn.type == 'boss') {
-        await add(BossEnemy(pos));
-      }
+      if (spawn.type == 'base') await add(BaseEnemy(pos));
+      else if (spawn.type == 'chaser') await add(ChaserEnemy(pos));
+      else if (spawn.type == 'boss') await add(BossEnemy(pos));
     }
 
-    await add(HealthPotion(Vector2(-150, 45)));
-    await add(HealthPotion(Vector2(150, -45)));
+    await add(HealthPotion(Vector2(-15 * 30, 4.5 * 30)));
+    await add(HealthPotion(Vector2(15 * 30, -4.5 * 30)));
 
     player = Player(Vector2(data.playerStart[0], data.playerStart[1]));
     await add(player);
@@ -121,7 +113,7 @@ class EpicGame extends FlameGame {
     await add(particles);
 
     camera.follow(player);
-    camera.viewfinder.zoom = GameConstants.cameraZoom;
+    camera.viewfinder.zoom = 1.0;
   }
 
   void startGame() {
@@ -130,7 +122,6 @@ class EpicGame extends FlameGame {
     overlays.remove('mainMenu');
     overlays.remove('gameOver');
     overlays.remove('victory');
-
     if (!_introShown) {
       _introShown = true;
       overlays.add('dialogue');
@@ -226,12 +217,8 @@ class EpicGame extends FlameGame {
 
   void dashPlayer() {
     player.dash();
-    particles.spawnBurst(
-      player.position.clone(),
-      count: 10,
-      color: const Color(0xFF4FC3F7),
-      speed: 200,
-    );
+    particles.spawnBurst(player.position.clone(), count: 10,
+        color: const Color(0xFF4FC3F7), speed: 200);
     add(DashTrail(player.position.clone()));
   }
 
@@ -241,7 +228,7 @@ class EpicGame extends FlameGame {
       return;
     }
     HookAnchor? nearest;
-    double minDist = 400;
+    double minDist = 500;
     for (final anchor in children.whereType<HookAnchor>()) {
       final d = (anchor.position - player.position).length;
       if (d < minDist) {
@@ -251,12 +238,8 @@ class EpicGame extends FlameGame {
     }
     if (nearest != null) {
       player.startHook(nearest.position.clone());
-      particles.spawnBurst(
-        player.position.clone(),
-        count: 8,
-        color: const Color(0xFFFFD700),
-        speed: 150,
-      );
+      particles.spawnBurst(player.position.clone(), count: 8,
+          color: const Color(0xFFFFD700), speed: 150);
     }
   }
 
@@ -270,16 +253,16 @@ class EpicGame extends FlameGame {
   void attackPlayer() {
     player.attack();
     final dir = player.isFacingRight ? 1.0 : -1.0;
-    final attackPos = player.position + Vector2(dir * 40, 0);
+    final attackPos = player.position + Vector2(dir * 50, 0);
     add(HitEffect(attackPos));
-    particles.spawnBurst(attackPos, count: 8, color: const Color(0xFFFFD700), speed: 200);
-    _damageEnemiesNear(attackPos, 60, 100, 20, 15);
+    particles.spawnBurst(attackPos, count: 8,
+        color: const Color(0xFFFFD700), speed: 200);
+    _damageEnemiesNear(attackPos, 80, 130, 20, 15);
   }
 
-  void _damageEnemiesNear(
-    Vector2 pos, double range1, double range2, int baseDmg, int variance) {
+  void _damageEnemiesNear(Vector2 pos, double r1, double r2, int baseDmg, int variance) {
     for (final e in children.whereType<BaseEnemy>()) {
-      if ((e.position - pos).length < range1) {
+      if ((e.position - pos).length < r1) {
         final dmg = baseDmg + _rng.nextInt(variance);
         final isCrit = _rng.nextDouble() < 0.2;
         final fd = isCrit ? dmg * 2 : dmg;
@@ -290,7 +273,7 @@ class EpicGame extends FlameGame {
       }
     }
     for (final e in children.whereType<ChaserEnemy>()) {
-      if ((e.position - pos).length < range1) {
+      if ((e.position - pos).length < r1) {
         final dmg = baseDmg + _rng.nextInt(variance);
         e.takeDamage(dmg);
         add(DamageNumber(e.position.clone(), dmg));
@@ -298,7 +281,7 @@ class EpicGame extends FlameGame {
       }
     }
     for (final e in children.whereType<BossEnemy>()) {
-      if ((e.position - pos).length < range2) {
+      if ((e.position - pos).length < r2) {
         final dmg = baseDmg + _rng.nextInt(variance);
         e.takeDamage(dmg);
         add(DamageNumber(e.position.clone(), dmg));
@@ -332,8 +315,8 @@ class EpicGame extends FlameGame {
 
   void healPlayer(int amount) {
     health = (health + amount).clamp(0, maxHealth);
-    particles.spawnBurst(
-      player.position.clone(), count: 15, color: const Color(0xFF4CAF50), speed: 200);
+    particles.spawnBurst(player.position.clone(), count: 15,
+        color: const Color(0xFF4CAF50), speed: 200);
   }
 
   @override
@@ -352,33 +335,31 @@ class EpicGame extends FlameGame {
       return;
     }
 
-    // فحص التصادم مع الأرضيات
+    // التصادم مع الأرضيات
     bool grounded = false;
     for (final g in _grounds) {
-      if (player.checkCollides(g.rect)) {
-        // تحديد الاتجاه
-        final pRect = Rect.fromCenter(
-          center: Offset(player.position.x, player.position.y),
-          width: player.size.x,
-          height: player.size.y,
-        );
+      if (player.rect.overlaps(g.rect)) {
+        final pRect = player.rect;
         final gRect = g.rect;
-        // ارتداد
-        if (player.velocity.y > 0 &&
-            pRect.bottom > gRect.top &&
-            pRect.bottom < gRect.top + 30) {
+        final overlapTop = pRect.bottom - gRect.top;
+        final overlapBottom = gRect.bottom - pRect.top;
+        final overlapLeft = pRect.right - gRect.left;
+        final overlapRight = gRect.right - pRect.left;
+        final minOverlap = [
+          overlapTop, overlapBottom, overlapLeft, overlapRight
+        ].reduce((a, b) => a < b ? a : b);
+
+        if (minOverlap == overlapTop) {
           player.position.y = gRect.top - player.size.y / 2;
           player.velocity.y = 0;
           grounded = true;
-        } else if (player.velocity.y < 0 &&
-            pRect.top < gRect.bottom &&
-            pRect.top > gRect.bottom - 30) {
+        } else if (minOverlap == overlapBottom) {
           player.position.y = gRect.bottom + player.size.y / 2;
           player.velocity.y = 0;
-        } else if (player.velocity.x > 0) {
+        } else if (minOverlap == overlapLeft) {
           player.position.x = gRect.left - player.size.x / 2;
           player.velocity.x = 0;
-        } else if (player.velocity.x < 0) {
+        } else if (minOverlap == overlapRight) {
           player.position.x = gRect.right + player.size.x / 2;
           player.velocity.x = 0;
         }
@@ -386,45 +367,45 @@ class EpicGame extends FlameGame {
     }
     player.setGrounded(grounded);
 
-    // العملات
+    // عملات
     for (final coin in children.whereType<Coin>().toList()) {
       if (coin.collected) continue;
-      if ((coin.position - player.position).length < 30) {
+      if ((coin.position - player.position).length < 35) {
         coin.collected = true;
         collectCoin(coin.position.clone());
         coin.removeFromParent();
       }
     }
 
-    // قوارير صحة
+    // قوارير
     for (final potion in children.whereType<HealthPotion>().toList()) {
-      if ((potion.position - player.position).length < 35) {
+      if ((potion.position - player.position).length < 40) {
         healPlayer(30);
         potion.removeFromParent();
       }
     }
 
-    // ضرر الأعداء
+    // ضرر
     for (final e in children.whereType<BaseEnemy>()) {
-      if ((e.position - player.position).length < 35) {
+      if ((e.position - player.position).length < 40) {
         health = (health - 1).clamp(0, maxHealth);
       }
     }
     for (final e in children.whereType<ChaserEnemy>()) {
-      if ((e.position - player.position).length < 40) {
+      if ((e.position - player.position).length < 45) {
         health = (health - 2).clamp(0, maxHealth);
       }
     }
     for (final e in children.whereType<BossEnemy>()) {
-      if ((e.position - player.position).length < 80) {
+      if ((e.position - player.position).length < 100) {
         health = (health - 3).clamp(0, maxHealth);
       }
     }
 
-    // القذائف
+    // قذائف
     for (final proj in children.whereType<Projectile>().toList()) {
       for (final e in children.whereType<BaseEnemy>()) {
-        if ((proj.position - e.position).length < 30) {
+        if ((proj.position - e.position).length < 35) {
           e.takeDamage(30);
           add(DamageNumber(e.position.clone(), 30));
           proj.removeFromParent();
@@ -434,7 +415,6 @@ class EpicGame extends FlameGame {
       }
     }
 
-    // Hook anchors
     for (final anchor in children.whereType<HookAnchor>()) {
       anchor.isInRange = (anchor.position - player.position).length < 400;
     }

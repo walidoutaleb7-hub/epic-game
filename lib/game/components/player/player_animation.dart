@@ -3,7 +3,8 @@ import 'package:flame/components.dart';
 import 'player_state.dart';
 
 class PlayerAnimation extends SpriteAnimationComponent {
-  static const String _basePath = 'player/Main Characters/Virtual Guy/';
+  static const String _basePath =
+      'assets/images/player/Main Characters/Virtual Guy/';
 
   late SpriteAnimation idle;
   late SpriteAnimation run;
@@ -19,7 +20,7 @@ class PlayerAnimation extends SpriteAnimationComponent {
 
   PlayerAnimation()
       : super(
-          size: Vector2(1.6, 1.8),
+          size: Vector2(48, 48),
           anchor: Anchor.center,
         );
 
@@ -32,7 +33,6 @@ class PlayerAnimation extends SpriteAnimationComponent {
     doubleJump = await _load('Double Jump (32x32).png', 6, 0.08);
     hit = await _load('Hit (32x32).png', 7, 0.1);
     wallJump = await _load('Wall Jump (32x32).png', 5, 0.08);
-
     animation = idle;
   }
 
@@ -50,42 +50,23 @@ class PlayerAnimation extends SpriteAnimationComponent {
   void playState(PlayerState state,
       {bool facingRight = true, bool isHit = false}) {
     _facingRight = facingRight;
-
     if (isHit && !_wasHit) {
       _wasHit = true;
       animation = hit;
       return;
     }
     if (!isHit) _wasHit = false;
-
     if (state == _lastState && !isHit) return;
     _lastState = state;
-
     switch (state) {
-      case PlayerState.idle:
-        animation = idle;
-        break;
-      case PlayerState.running:
-        animation = run;
-        break;
-      case PlayerState.jumping:
-        animation = jump;
-        break;
-      case PlayerState.falling:
-        animation = fall;
-        break;
-      case PlayerState.dashing:
-        animation = run;
-        break;
-      case PlayerState.wallSliding:
-        animation = wallJump;
-        break;
-      case PlayerState.hooking:
-        animation = doubleJump;
-        break;
-      case PlayerState.attacking:
-        animation = run;
-        break;
+      case PlayerState.idle: animation = idle; break;
+      case PlayerState.running: animation = run; break;
+      case PlayerState.jumping: animation = jump; break;
+      case PlayerState.falling: animation = fall; break;
+      case PlayerState.dashing: animation = run; break;
+      case PlayerState.wallSliding: animation = wallJump; break;
+      case PlayerState.hooking: animation = doubleJump; break;
+      case PlayerState.attacking: animation = run; break;
     }
   }
 
