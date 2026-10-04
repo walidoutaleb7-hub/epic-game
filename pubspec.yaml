@@ -1,5 +1,5 @@
 name: epic_game
-description: An epic 2D story game
+description: An epic 2D story game inspired by HAAK
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,8 +10,12 @@ dependencies:
   flutter:
     sdk: flutter
   flame: ^1.18.0
-  flutter_animate: ^4.5.0
+  flame_forge2d: ^0.18.0
+  flame_audio: ^2.10.0
+  flame_tiled: ^2.0.0
   google_fonts: ^6.2.1
+  flutter_animate: ^4.5.0
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:
@@ -20,3 +24,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/player/
+    - assets/images/enemies/
+    - assets/images/ui/
+    - assets/images/effects/
+    - assets/tiles/
+  fonts:
+    - family: Cinzel
+      fonts:
+        - asset: assets/fonts/Cinzel-Regular.ttf
