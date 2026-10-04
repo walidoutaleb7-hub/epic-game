@@ -5,10 +5,13 @@ import 'package:flutter/services.dart';
 import 'game/epic_game.dart';
 import 'game/ui/achievements_panel.dart';
 import 'game/ui/dialogue_box.dart';
+import 'game/ui/game_over_screen.dart';
 import 'game/ui/hud.dart';
 import 'game/ui/main_menu.dart';
 import 'game/ui/pause_menu.dart';
 import 'game/ui/settings_menu.dart';
+import 'game/ui/tutorial_hint.dart';
+import 'game/ui/victory_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,8 +73,23 @@ class _GameWrapperState extends State<GameWrapper> {
                 lines: game.dialogue.getDialogue('intro')!,
                 onComplete: () {
                   game.overlays.remove('dialogue');
-                  game.overlays.add('hud');
+                  if (game.isPlaying) game.overlays.add('hud');
                 },
+              ),
+          'gameOver': (context, game) => GameOverOverlay(
+                onRetry: game.retryLevel,
+                onMenu: game.returnToMenu,
+                score: game.score,
+                kills: game.enemiesKilled,
+              ),
+          'victory': (context, game) => VictoryOverlay(
+                onNextLevel: game.nextLevel,
+                onMenu: game.returnToMenu,
+                score: game.score,
+                isLastLevel: game.levels.isLastLevel,
+              ),
+          'hint': (context, game) => TutorialHintOverlay(
+                hint: game.currentHint,
               ),
         },
       ),

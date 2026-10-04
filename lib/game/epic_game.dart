@@ -17,9 +17,11 @@ import 'components/levels/parallax_background.dart';
 import 'components/player/player.dart';
 import 'components/player/player_state.dart';
 import 'components/player/projectile.dart';
+import 'data/level_data.dart';
 import 'systems/achievement_system.dart';
 import 'systems/camera_shake.dart';
 import 'systems/dialogue_system.dart';
+import 'systems/level_manager.dart';
 import 'systems/particle_system.dart';
 import 'systems/save_system.dart';
 import 'utils/constants.dart';
@@ -33,6 +35,7 @@ class EpicGame extends Forge2DGame {
   final CameraShake cameraShake = CameraShake();
   final AchievementSystem achievements = AchievementSystem();
   final DialogueSystem dialogue = DialogueSystem();
+  final LevelManager levels = LevelManager();
   final math.Random _rng = math.Random();
 
   int health = GameConstants.maxHealth;
@@ -40,81 +43,174 @@ class EpicGame extends Forge2DGame {
   int score = 0;
   int coinsCollected = 0;
   int enemiesKilled = 0;
-  int level = 1;
   bool isPlaying = false;
   bool isPaused = false;
   bool _introShown = false;
+  bool _dying = false;
   double _autoSaveTimer = 0;
   double _projectileCooldown = 0;
+  String _currentHint = '';
+
+  List<Component> _levelComponents = [];
 
   @override
   Future<void> onLoad() async {
-    background = ParallaxBackground();
-    await add(background);
-
-    await add(Ground(Vector2(0, 8), Vector2(80, 1)));
-    await add(Ground(Vector2(-14, 2), Vector2(6, 0.5)));
-    await add(Ground(Vector2(14, -2), Vector2(6, 0.5)));
-    await add(Ground(Vector2(0, -6), Vector2(5, 0.5)));
-    await add(Ground(Vector2(-25, -2), Vector2(4, 0.5)));
-    await add(Ground(Vector2(25, 2), Vector2(4, 0.5)));
-    await add(Ground(Vector2(-32, -6), Vector2(3, 0.5)));
-    await add(Ground(Vector2(32, -6), Vector2(3, 0.5)));
-    await add(Ground(Vector2(-40, 0), Vector2(1, 20)));
-    await add(Ground(Vector2(40, 0), Vector2(1, 20)));
-    await add(Ground(Vector2(-10, -10), Vector2(1, 6)));
-    await add(Ground(Vector2(10, -10), Vector2(1, 6)));
-
-    await add(HookAnchor(Vector2(-6, -3)));
-    await add(HookAnchor(Vector2(6, -3)));
-    await add(HookAnchor(Vector2(-18, -8)));
-    await add(HookAnchor(Vector2(18, -8)));
-    await add(HookAnchor(Vector2(0, -12)));
-    await add(HookAnchor(Vector2(-30, -3)));
-    await add(HookAnchor(Vector2(30, -3)));
-
-    await add(BaseEnemy(Vector2(-18, 6)));
-    await add(BaseEnemy(Vector2(18, -5)));
-    await add(ChaserEnemy(Vector2(-28, 6)));
-    await add(ChaserEnemy(Vector2(28, -5)));
-    await add(BossEnemy(Vector2(0, -18)));
-
-    for (int i = -20; i <= 20; i += 4) {
-      await add(Coin(Vector2(i.toDouble(), 5.5)));
-    }
-    for (int i = -30; i <= 30; i += 6) {
-      await add(Coin(Vector2(i.toDouble(), -9.5)));
-    }
-
-    await add(HealthPotion(Vector2(-15, 4.5)));
-    await add(HealthPotion(Vector2(15, -4.5)));
-
-    player = Player(Vector2(0, 6));
-    await add(player);
-
-    particles = ParticleSystem();
-    await add(particles);
-
+    await _buildLevel();
     camera.follow(player);
     camera.zoom = GameConstants.cameraZoom;
-
     overlays.add('mainMenu');
+  }
+
+  Future<void> _buildLevel() async {
+    // تنظيف المستوى القديم
+    for (final c in _levelComponents) {
+      c.removeFromParent();
+    }
+    _levelComponents.clear();
+
+    final data = levels.currentData;
+
+    background = ParallaxBackground();
+    await add(background);
+    _levelComponents.add(background);
+
+    // الأرضيات
+    for (int i = 0; i < data.groundPositions.length; i++) {
+      final g = Ground(data.groundPositions[i], data.groundSizes[i]);
+      await add(g);
+      _levelComponents.add(g);
+    }
+
+    // حيطان جانبية
+    final wallLeft = Ground(Vector2(-40, 0), Vector2(1, 24));
+    final wallRight = Ground(Vector2(40, 0), Vector2(1, 24));
+    await add(wallLeft);
+    await add(wallRight);
+    _levelComponents.add(wallLeft);
+    _levelComponents.add(wallRight);
+
+    // نقاط الخطاف
+    for (final anchor in data.hookAnchors) {
+      final a = HookAnchor(anchor);
+      await add(a);
+      _levelComponents.add(a);
+    }
+
+    // العملات
+    for (final coin in data.coins) {
+      final c = Coin(coin);
+      await add(c);
+      _levelComponents.add(c);
+    }
+
+    // الأعداء
+    for (final spawn in data.enemies) {
+      if (spawn.type == 'base') {
+        final e = BaseEnemy(spawn.position);
+        await add(e);
+        _levelComponents.add(e);
+      } else if (spawn.type == 'chaser') {
+        final e = ChaserEnemy(spawn.position);
+        await add(e);
+        _levelComponents.add(e);
+      } else if (spawn.type == 'boss') {
+        final e = BossEnemy(spawn.position);
+        await add(e);
+        _levelComponents.add(e);
+      }
+    }
+
+    // قوارير صحة
+    final p1 = HealthPotion(Vector2(-15, 4.5));
+    final p2 = HealthPotion(Vector2(15, -4.5));
+    await add(p1);
+    await add(p2);
+    _levelComponents.add(p1);
+    _levelComponents.add(p2);
+
+    // اللاعب
+    player = Player(data.playerStart);
+    await add(player);
+    _levelComponents.add(player);
+
+    // الجزيئات
+    particles = ParticleSystem();
+    await add(particles);
+    _levelComponents.add(particles);
+
+    camera.follow(player);
   }
 
   void startGame() {
     isPlaying = true;
+    _dying = false;
     overlays.remove('mainMenu');
+    overlays.remove('gameOver');
+    overlays.remove('victory');
 
     if (!_introShown) {
       _introShown = true;
       overlays.add('dialogue');
       Future.delayed(const Duration(seconds: 8), () {
+        if (!isPlaying) return;
         overlays.remove('dialogue');
         overlays.add('hud');
+        _showHint('استعمل العصا للحركة، وزر القفز للأعلى');
       });
     } else {
       overlays.add('hud');
     }
+  }
+
+  void _showHint(String hint) {
+    _currentHint = hint;
+    overlays.add('hint');
+    Future.delayed(const Duration(seconds: 4), () {
+      overlays.remove('hint');
+    });
+  }
+
+  void retryLevel() {
+    health = maxHealth;
+    _dying = false;
+    score = 0;
+    coinsCollected = 0;
+    enemiesKilled = 0;
+    levels.reset();
+    _buildLevel();
+    overlays.remove('gameOver');
+    overlays.add('hud');
+    resumeEngine();
+  }
+
+  void nextLevel() {
+    if (!levels.advanceLevel()) {
+      _showVictory();
+      return;
+    }
+    health = maxHealth;
+    _dying = false;
+    _buildLevel();
+    overlays.remove('victory');
+    overlays.add('hud');
+    resumeEngine();
+  }
+
+  void _showVictory() {
+    isPlaying = false;
+    pauseEngine();
+    overlays.remove('hud');
+    overlays.add('victory');
+  }
+
+  void _triggerGameOver() {
+    if (_dying) return;
+    _dying = true;
+    isPlaying = false;
+    pauseEngine();
+    overlays.remove('hud');
+    overlays.add('gameOver');
+    SaveSystem.clear();
   }
 
   void openSettings() => overlays.add('settings');
@@ -141,6 +237,8 @@ class EpicGame extends Forge2DGame {
     isPlaying = false;
     overlays.remove('pauseMenu');
     overlays.remove('hud');
+    overlays.remove('gameOver');
+    overlays.remove('victory');
     overlays.add('mainMenu');
     resumeEngine();
   }
@@ -251,14 +349,23 @@ class EpicGame extends Forge2DGame {
   void _onEnemyKilled() {
     enemiesKilled++;
     score += 50;
+    levels.registerKill();
     achievements.register('first_blood', 1);
     achievements.register('hunter', 1);
     achievements.register('slayer', 1);
+
+    // فحص الإنجاز
+    if (levels.canAdvance && !_dying) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (isPlaying) _showVictory();
+      });
+    }
   }
 
   void collectCoin(Vector2 pos) {
     coinsCollected++;
     score += 10;
+    levels.registerCoin();
     particles.spawnBurst(
       pos,
       count: 6,
@@ -290,6 +397,12 @@ class EpicGame extends Forge2DGame {
     }
 
     if (!isPlaying) return;
+
+    // فحص الموت
+    if (health <= 0 && !_dying) {
+      _triggerGameOver();
+      return;
+    }
 
     for (final coin in children.whereType<Coin>().toList()) {
       if (coin.collected) continue;
@@ -344,7 +457,7 @@ class EpicGame extends Forge2DGame {
     if (_autoSaveTimer >= 10) {
       _autoSaveTimer = 0;
       SaveSystem.save(
-        level: level,
+        level: levels.currentLevel,
         score: score,
         health: health,
         inventory: const [],
@@ -353,4 +466,5 @@ class EpicGame extends Forge2DGame {
   }
 
   PlayerState get playerState => player.state;
+  String get currentHint => _currentHint;
 }
