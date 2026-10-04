@@ -13,56 +13,91 @@ class HudOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // شريط الحياة فوق
         Positioned(
           top: 20,
           left: 20,
-          child: _HealthBar(
-            current: game.health,
-            max: game.maxHealth,
-          ),
+          child: _HealthBar(current: game.health, max: game.maxHealth),
         ),
-        // النقاط فوق
         Positioned(
           top: 20,
           right: 20,
           child: _ScoreDisplay(score: game.score),
         ),
-        // Joystick يسار
         Positioned(
           left: 30,
           bottom: 30,
           child: VirtualJoystick(onMove: game.movePlayer),
         ),
-        // أزرار يمين
         Positioned(
           right: 30,
           bottom: 30,
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _ActionButton(
-                label: 'هجوم',
-                icon: Icons.sports_martial_arts,
-                color: const Color(0xFFFF5252),
-                onTap: game.attackPlayer,
+              // صف أول: قذيفة + خطاف
+              Row(
+                children: [
+                  _ActionButton(
+                    label: 'قذيفة',
+                    icon: Icons.bolt_rounded,
+                    color: const Color(0xFFFFC107),
+                    onTap: game.fireProjectile,
+                  ),
+                  const SizedBox(width: 12),
+                  _ActionButton(
+                    label: 'خطاف',
+                    icon: Icons.anchor_rounded,
+                    color: const Color(0xFF00BCD4),
+                    onTap: game.hookPlayer,
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              _ActionButton(
-                label: 'اندفاع',
-                icon: Icons.flash_on_rounded,
-                color: const Color(0xFF9C27B0),
-                onTap: game.dashPlayer,
-              ),
-              const SizedBox(width: 16),
-              _ActionButton(
-                label: 'قفز',
-                icon: Icons.arrow_upward_rounded,
-                color: const Color(0xFF4CAF50),
-                onTap: game.jumpPlayer,
-                large: true,
+              const SizedBox(height: 12),
+              // صف ثاني: هجوم + اندفاع + قفز
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _ActionButton(
+                    label: 'هجوم',
+                    icon: Icons.sports_martial_arts,
+                    color: const Color(0xFFFF5252),
+                    onTap: game.attackPlayer,
+                  ),
+                  const SizedBox(width: 12),
+                  _ActionButton(
+                    label: 'اندفاع',
+                    icon: Icons.flash_on_rounded,
+                    color: const Color(0xFF9C27B0),
+                    onTap: game.dashPlayer,
+                  ),
+                  const SizedBox(width: 12),
+                  _ActionButton(
+                    label: 'قفز',
+                    icon: Icons.arrow_upward_rounded,
+                    color: const Color(0xFF4CAF50),
+                    onTap: game.jumpPlayer,
+                    large: true,
+                  ),
+                ],
               ),
             ],
+          ),
+        ),
+        // زر إيقاف مؤقت
+        Positioned(
+          top: 20,
+          left: 300,
+          child: GestureDetector(
+            onTap: game.pauseGame,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0x99000000),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+              ),
+              child: const Icon(Icons.pause, color: Color(0xFFFFD700), size: 24),
+            ),
           ),
         ),
       ],
@@ -70,7 +105,6 @@ class HudOverlay extends StatelessWidget {
   }
 }
 
-/// ==================== شريط الحياة ====================
 class _HealthBar extends StatelessWidget {
   final int current;
   final int max;
@@ -130,7 +164,6 @@ class _HealthBar extends StatelessWidget {
   }
 }
 
-/// ==================== عرض النقاط ====================
 class _ScoreDisplay extends StatelessWidget {
   final int score;
   const _ScoreDisplay({required this.score});
@@ -162,7 +195,6 @@ class _ScoreDisplay extends StatelessWidget {
   }
 }
 
-/// ==================== Joystick ====================
 class VirtualJoystick extends StatefulWidget {
   final Function(double) onMove;
   const VirtualJoystick({super.key, required this.onMove});
@@ -239,7 +271,6 @@ class _VirtualJoystickState extends State<VirtualJoystick> {
   }
 }
 
-/// ==================== زر الأكشن ====================
 class _ActionButton extends StatefulWidget {
   final String label;
   final IconData icon;
@@ -264,7 +295,7 @@ class _ActionButtonState extends State<_ActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final size = widget.large ? 95.0 : 70.0;
+    final size = widget.large ? 85.0 : 62.0;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -293,16 +324,16 @@ class _ActionButtonState extends State<_ActionButton> {
             child: Icon(
               widget.icon,
               color: widget.color,
-              size: widget.large ? 42 : 30,
+              size: widget.large ? 38 : 26,
             ),
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 4),
         Text(
           widget.label,
           style: GoogleFonts.cinzel(
             color: widget.color,
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
         ),

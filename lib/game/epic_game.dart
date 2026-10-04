@@ -12,8 +12,11 @@ import 'components/enemies/chaser_enemy.dart';
 import 'components/items/coin.dart';
 import 'components/items/health_potion.dart';
 import 'components/levels/ground.dart';
+import 'components/levels/hook_anchor.dart';
 import 'components/levels/parallax_background.dart';
 import 'components/player/player.dart';
+import 'components/player/player_state.dart';
+import 'components/player/projectile.dart';
 import 'systems/achievement_system.dart';
 import 'systems/camera_shake.dart';
 import 'systems/particle_system.dart';
@@ -39,19 +42,15 @@ class EpicGame extends Forge2DGame {
   bool isPlaying = false;
   bool isPaused = false;
   double _autoSaveTimer = 0;
-
-  final List<Achievement> _pendingPopups = [];
+  double _projectileCooldown = 0;
 
   @override
   Future<void> onLoad() async {
-    // الخلفية
     background = ParallaxBackground();
     await add(background);
 
-    // الأرضية الرئيسية
+    // الأرضية والمنصات
     await add(Ground(Vector2(0, 8), Vector2(80, 1)));
-
-    // منصات متنوعة
     await add(Ground(Vector2(-14, 2), Vector2(6, 0.5)));
     await add(Ground(Vector2(14, -2), Vector2(6, 0.5)));
     await add(Ground(Vector2(0, -6), Vector2(5, 0.5)));
@@ -60,18 +59,29 @@ class EpicGame extends Forge2DGame {
     await add(Ground(Vector2(-32, -6), Vector2(3, 0.5)));
     await add(Ground(Vector2(32, -6), Vector2(3, 0.5)));
 
-    // أعداء بسيطون
+    // حيطان جانبية (للتسلق)
+    await add(Ground(Vector2(-40, 0), Vector2(1, 20)));
+    await add(Ground(Vector2(40, 0), Vector2(1, 20)));
+    await add(Ground(Vector2(-10, -10), Vector2(1, 6)));
+    await add(Ground(Vector2(10, -10), Vector2(1, 6)));
+
+    // نقاط الخطاف
+    await add(HookAnchor(Vector2(-6, -3)));
+    await add(HookAnchor(Vector2(6, -3)));
+    await add(HookAnchor(Vector2(-18, -8)));
+    await add(HookAnchor(Vector2(18, -8)));
+    await add(HookAnchor(Vector2(0, -12)));
+    await add(HookAnchor(Vector2(-30, -3)));
+    await add(HookAnchor(Vector2(30, -3)));
+
+    // أعداء
     await add(BaseEnemy(Vector2(-18, 6)));
     await add(BaseEnemy(Vector2(18, -5)));
-
-    // أعداء مطاردون
     await add(ChaserEnemy(Vector2(-28, 6)));
     await add(ChaserEnemy(Vector2(28, -5)));
+    await add(BossEnemy(Vector2(0, -18)));
 
-    // الزعيم
-    await add(BossEnemy(Vector2(0, -12)));
-
-    // العملات
+    // عملات
     for (int i = -20; i <= 20; i += 4) {
       await add(Coin(Vector2(i.toDouble(), 5.5)));
     }
@@ -79,19 +89,16 @@ class EpicGame extends Forge2DGame {
       await add(Coin(Vector2(i.toDouble(), -9.5)));
     }
 
-    // قوارير الصحة
+    // قوارير صحة
     await add(HealthPotion(Vector2(-15, 4.5)));
     await add(HealthPotion(Vector2(15, -4.5)));
 
-    // اللاعب
     player = Player(Vector2(0, 6));
     await add(player);
 
-    // الجزيئات
     particles = ParticleSystem();
     await add(particles);
 
-    // الكاميرا
     camera.follow(player);
     camera.zoom = GameConstants.cameraZoom;
 
@@ -141,12 +148,53 @@ class EpicGame extends Forge2DGame {
     add(DashTrail(player.body.position.clone()));
   }
 
+  void hookPlayer() {
+    if (player.isHooking) {
+      player.releaseHook();
+      return;
+    }
+    // ابحث عن أقرب نقطة
+    HookAnchor? nearest;
+    double minDist = 12.0;
+    for (final anchor in children.whereType<HookAnchor>()) {
+      final d = (anchor.body.position - player.body.position).length;
+      if (d < minDist) {
+        minDist = d;
+        nearest = anchor;
+      }
+    }
+    if (nearest != null) {
+      player.startHook(nearest.body.position.clone());
+      particles.spawnBurst(
+        player.body.position.clone(),
+        count: 8,
+        color: const Color(0xFFFFD700),
+        speed: 80,
+      );
+    }
+  }
+
+  void fireProjectile() {
+    if (_projectileCooldown > 0) return;
+    _projectileCooldown = 0.35;
+
+    final dir = Vector2(player.isFacingRight ? 1 : -1, 0);
+    final spawnPos = player.body.position + dir * 0.8;
+    add(Projectile(spawnPos, dir));
+
+    particles.spawnBurst(
+      spawnPos,
+      count: 5,
+      color: const Color(0xFFFFD700),
+      speed: 60,
+    );
+  }
+
   void attackPlayer() {
     player.attack();
     final dir = player.isFacingRight ? 1.0 : -1.0;
     final attackPos = player.body.position + Vector2(dir * 1.0, 0);
 
-    // تأثير بصري
     add(HitEffect(attackPos));
     particles.spawnBurst(
       attackPos,
@@ -155,41 +203,38 @@ class EpicGame extends Forge2DGame {
       speed: 130,
     );
 
-    // إلحاق ضرر بالأعداء القريبين
+    _damageEnemiesNear(attackPos, 1.3, 2.2, 20, 15);
+  }
+
+  void _damageEnemiesNear(
+    Vector2 pos,
+    double range1,
+    double range2,
+    int baseDmg,
+    int variance,
+  ) {
     for (final child in children.whereType<BaseEnemy>()) {
-      if ((child.body.position - attackPos).length < 1.3) {
-        final dmg = 20 + _rng.nextInt(15);
+      if ((child.body.position - pos).length < range1) {
+        final dmg = baseDmg + _rng.nextInt(variance);
         final isCrit = _rng.nextDouble() < 0.2;
         final finalDmg = isCrit ? dmg * 2 : dmg;
         child.takeDamage(finalDmg);
-        add(DamageNumber(
-          child.body.position.clone(),
-          finalDmg,
-          isCrit: isCrit,
-        ));
+        add(DamageNumber(child.body.position.clone(), finalDmg, isCrit: isCrit));
         cameraShake.shake(intensity: isCrit ? 0.8 : 0.4, duration: 0.25);
-        particles.spawnBurst(
-          child.body.position.clone(),
-          count: 12,
-          color: const Color(0xFFE53935),
-        );
         if (child.health <= 0) _onEnemyKilled();
       }
     }
-
     for (final child in children.whereType<ChaserEnemy>()) {
-      if ((child.body.position - attackPos).length < 1.3) {
-        final dmg = 20 + _rng.nextInt(15);
+      if ((child.body.position - pos).length < range1) {
+        final dmg = baseDmg + _rng.nextInt(variance);
         child.takeDamage(dmg);
         add(DamageNumber(child.body.position.clone(), dmg));
-        cameraShake.shake(intensity: 0.4, duration: 0.2);
         if (child.health <= 0) _onEnemyKilled();
       }
     }
-
     for (final child in children.whereType<BossEnemy>()) {
-      if ((child.body.position - attackPos).length < 2.2) {
-        final dmg = 20 + _rng.nextInt(15);
+      if ((child.body.position - pos).length < range2) {
+        final dmg = baseDmg + _rng.nextInt(variance);
         child.takeDamage(dmg);
         add(DamageNumber(child.body.position.clone(), dmg));
         cameraShake.shake(intensity: 0.6, duration: 0.3);
@@ -200,8 +245,7 @@ class EpicGame extends Forge2DGame {
   void _onEnemyKilled() {
     enemiesKilled++;
     score += 50;
-    final unlocked = achievements.register('first_blood', 1);
-    if (unlocked != null) _pendingPopups.add(unlocked);
+    achievements.register('first_blood', 1);
     achievements.register('hunter', 1);
     achievements.register('slayer', 1);
   }
@@ -232,6 +276,7 @@ class EpicGame extends Forge2DGame {
   @override
   void update(double dt) {
     super.update(dt);
+    if (_projectileCooldown > 0) _projectileCooldown -= dt;
 
     cameraShake.update(dt);
     if (cameraShake.isActive) {
@@ -239,59 +284,74 @@ class EpicGame extends Forge2DGame {
           player.body.position + cameraShake.offset;
     }
 
-    // فحص العملات
-    if (isPlaying) {
-      for (final coin in children.whereType<Coin>()) {
-        if (coin.collected) continue;
-        if ((coin.body.position - player.body.position).length < 0.8) {
-          coin.collected = true;
-          collectCoin(coin.body.position);
-          coin.removeFromParent();
-        }
-      }
+    if (!isPlaying) return;
 
-      for (final potion in children.whereType<HealthPotion>()) {
-        if ((potion.body.position - player.body.position).length < 0.8) {
-          healPlayer(30);
-          potion.removeFromParent();
-        }
+    // جمع العملات
+    for (final coin in children.whereType<Coin>().toList()) {
+      if (coin.collected) continue;
+      if ((coin.body.position - player.body.position).length < 0.8) {
+        coin.collected = true;
+        collectCoin(coin.body.position);
+        coin.removeFromParent();
       }
+    }
 
-      // ضرر من الأعداء
+    // قوارير صحة
+    for (final potion in children.whereType<HealthPotion>().toList()) {
+      if ((potion.body.position - player.body.position).length < 0.8) {
+        healPlayer(30);
+        potion.removeFromParent();
+      }
+    }
+
+    // ضرر الأعداء
+    for (final enemy in children.whereType<BaseEnemy>()) {
+      if ((enemy.body.position - player.body.position).length < 1.0) {
+        health = (health - 1).clamp(0, maxHealth);
+      }
+    }
+    for (final enemy in children.whereType<ChaserEnemy>()) {
+      if ((enemy.body.position - player.body.position).length < 1.0) {
+        health = (health - 2).clamp(0, maxHealth);
+      }
+    }
+    for (final enemy in children.whereType<BossEnemy>()) {
+      if ((enemy.body.position - player.body.position).length < 2.0) {
+        health = (health - 3).clamp(0, maxHealth);
+      }
+    }
+
+    // ضرر القذائف
+    for (final proj in children.whereType<Projectile>().toList()) {
       for (final enemy in children.whereType<BaseEnemy>()) {
-        if ((enemy.body.position - player.body.position).length < 1.0) {
-          health = (health - 1).clamp(0, maxHealth);
+        if ((proj.body.position - enemy.body.position).length < 0.6) {
+          enemy.takeDamage(30);
+          add(DamageNumber(enemy.body.position.clone(), 30));
+          proj.removeFromParent();
+          if (enemy.health <= 0) _onEnemyKilled();
+          break;
         }
       }
-      for (final enemy in children.whereType<ChaserEnemy>()) {
-        if ((enemy.body.position - player.body.position).length < 1.0) {
-          health = (health - 2).clamp(0, maxHealth);
-        }
-      }
-      for (final enemy in children.whereType<BossEnemy>()) {
-        if ((enemy.body.position - player.body.position).length < 2.0) {
-          health = (health - 3).clamp(0, maxHealth);
-        }
-      }
+    }
 
-      // الحفظ التلقائي كل 10 ثواني
-      _autoSaveTimer += dt;
-      if (_autoSaveTimer >= 10) {
-        _autoSaveTimer = 0;
-        SaveSystem.save(
-          level: level,
-          score: score,
-          health: health,
-          inventory: const [],
-        );
-      }
+    // إحياء نقط التعليق حسب القرب
+    for (final anchor in children.whereType<HookAnchor>()) {
+      anchor.isInRange =
+          (anchor.body.position - player.body.position).length < 12.0;
+    }
+
+    // الحفظ التلقائي
+    _autoSaveTimer += dt;
+    if (_autoSaveTimer >= 10) {
+      _autoSaveTimer = 0;
+      SaveSystem.save(
+        level: level,
+        score: score,
+        health: health,
+        inventory: const [],
+      );
     }
   }
 
-  Achievement? popAchievement() {
-    if (_pendingPopups.isEmpty) return null;
-    return _pendingPopups.removeAt(0);
-  }
-
-  bool get hasPopup => _pendingPopups.isNotEmpty;
+  PlayerState get playerState => player.state;
 }
