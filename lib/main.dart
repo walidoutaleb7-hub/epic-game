@@ -10,6 +10,7 @@ import 'game/ui/hud.dart';
 import 'game/ui/main_menu.dart';
 import 'game/ui/pause_menu.dart';
 import 'game/ui/settings_menu.dart';
+import 'game/ui/splash_screen.dart';
 import 'game/ui/tutorial_hint.dart';
 import 'game/ui/victory_screen.dart';
 
@@ -46,11 +47,18 @@ class GameWrapper extends StatefulWidget {
 
 class _GameWrapperState extends State<GameWrapper> {
   late final EpicGame _game;
+  bool _showSplash = true;
 
   @override
   void initState() {
     super.initState();
     _game = EpicGame();
+    _game.overlays.add('splash');
+    Future.delayed(const Duration(seconds: 4), () {
+      if (!mounted) return;
+      _game.overlays.remove('splash');
+      setState(() => _showSplash = false);
+    });
   }
 
   @override
@@ -59,12 +67,11 @@ class _GameWrapperState extends State<GameWrapper> {
       body: GameWidget<EpicGame>(
         game: _game,
         overlayBuilderMap: {
+          'splash': (context, game) => const SplashScreenOverlay(),
           'mainMenu': (context, game) => MainMenuOverlay(game: game),
           'hud': (context, game) => HudOverlay(game: game),
           'pauseMenu': (context, game) => PauseMenuOverlay(game: game),
-          'settings': (context, game) => SettingsMenuOverlay(
-                onClose: game.closeSettings,
-              ),
+          'settings': (context, game) => SettingsMenuOverlay(onClose: game.closeSettings),
           'achievements': (context, game) => AchievementsPanelOverlay(
                 system: game.achievements,
                 onClose: game.closeAchievements,
@@ -88,9 +95,7 @@ class _GameWrapperState extends State<GameWrapper> {
                 score: game.score,
                 isLastLevel: game.levels.isLastLevel,
               ),
-          'hint': (context, game) => TutorialHintOverlay(
-                hint: game.currentHint,
-              ),
+          'hint': (context, game) => TutorialHintOverlay(hint: game.currentHint),
         },
       ),
     );
