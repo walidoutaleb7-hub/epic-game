@@ -195,7 +195,7 @@ class _SettingToggle extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChange,
-            activeThumbColor: const Color(0xFFFFD700),
+            activeColor: const Color(0xFFFFD700),
             activeTrackColor: const Color(0x66FFD700),
           ),
         ],

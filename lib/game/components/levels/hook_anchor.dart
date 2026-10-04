@@ -20,7 +20,7 @@ class HookAnchor extends BodyComponent {
   Body createBody() {
     final shape = CircleShape()..radius = _radius;
     final fixture = FixtureDef(shape, isSensor: true);
-    return world.createBody(bodyDef)..createFixture(fixture);
+    return world.createBody(bodyDef!)..createFixture(fixture);
   }
 
   @override

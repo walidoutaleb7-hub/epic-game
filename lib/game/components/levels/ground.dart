@@ -12,7 +12,7 @@ class Ground extends BodyComponent {
     final shape = PolygonShape()..setAsBoxXY(_size.x / 2, _size.y / 2);
     final fixture = FixtureDef(shape, friction: 0.6, restitution: 0.0);
     final bodyDef = BodyDef(position: _position, type: BodyType.static);
-    return world.createBody(bodyDef)..createFixture(fixture);
+    return world.createBody(bodyDef!)..createFixture(fixture);
   }
 
   @override

@@ -27,7 +27,7 @@ class Projectile extends BodyComponent {
       restitution: 0.0,
       isSensor: true,
     );
-    final body = world.createBody(bodyDef)..createFixture(fixture);
+    final body = world.createBody(bodyDef!)..createFixture(fixture);
     body.linearVelocity = direction.normalized() * 18.0;
     return body;
   }

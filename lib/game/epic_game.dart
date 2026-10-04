@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'dart:math' as math;
 
 import 'package:flame/components.dart';
@@ -22,7 +23,7 @@ import 'systems/achievement_system.dart';
 import 'systems/camera_shake.dart';
 import 'systems/dialogue_system.dart';
 import 'systems/level_manager.dart';
-import 'systems/particle_system.dart';
+import 'systems/particle_system.dart' as ps;
 import 'systems/save_system.dart';
 import 'utils/constants.dart';
 
@@ -30,7 +31,7 @@ class EpicGame extends Forge2DGame {
   EpicGame() : super(gravity: Vector2(0, GameConstants.gravity));
 
   late Player player;
-  late ParticleSystem particles;
+  late ps.ParticleSystem particles;
   late ParallaxBackground background;
   final CameraShake cameraShake = CameraShake();
   final AchievementSystem achievements = AchievementSystem();
@@ -57,7 +58,7 @@ class EpicGame extends Forge2DGame {
   Future<void> onLoad() async {
     await _buildLevel();
     camera.follow(player);
-    camera.zoom = GameConstants.cameraZoom;
+    camera.viewfinder.zoom = GameConstants.cameraZoom;
     overlays.add('mainMenu');
   }
 
@@ -134,7 +135,7 @@ class EpicGame extends Forge2DGame {
     _levelComponents.add(player);
 
     // الجزيئات
-    particles = ParticleSystem();
+    particles = ps.ParticleSystem();
     await add(particles);
     _levelComponents.add(particles);
 

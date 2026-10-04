@@ -16,7 +16,7 @@ class HealthPotion extends BodyComponent {
   Body createBody() {
     final shape = CircleShape()..radius = 0.35;
     final fixture = FixtureDef(shape, isSensor: true);
-    return world.createBody(bodyDef)..createFixture(fixture);
+    return world.createBody(bodyDef!)..createFixture(fixture);
   }
 
   @override

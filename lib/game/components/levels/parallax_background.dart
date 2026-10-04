@@ -43,7 +43,7 @@ class ParallaxBackground extends PositionComponent {
       final sx = ((i * 37) % 200 - 100) + (_scrollX * 0.1) % 200;
       final sy = ((i * 53) % 12) - 6;
       canvas.drawCircle(
-        Offset(sx, sy),
+        Offset(sx.toDouble(), sy.toDouble()),
         0.05 + (i % 3) * 0.03,
         Paint()..color = const Color(0xFFFFD700).withValues(alpha: 0.6),
       );

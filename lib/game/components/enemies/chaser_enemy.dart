@@ -28,7 +28,7 @@ class ChaserEnemy extends BodyComponent {
   Body createBody() {
     final shape = PolygonShape()..setAsBoxXY(0.55, 0.55);
     final fixture = FixtureDef(shape, friction: 0.3, density: 1.2);
-    return world.createBody(bodyDef)..createFixture(fixture);
+    return world.createBody(bodyDef!)..createFixture(fixture);
   }
 
   void takeDamage(int dmg) {

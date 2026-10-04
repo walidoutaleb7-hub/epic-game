@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
+import 'package:flutter/painting.dart';
 
 class DamageNumber extends PositionComponent {
   final int damage;
@@ -22,9 +23,7 @@ class DamageNumber extends PositionComponent {
   @override
   void render(Canvas canvas) {
     final alpha = (1 - _timer / _duration).clamp(0.0, 1.0);
-    final color = isCrit
-        ? const Color(0xFFFFEB3B)
-        : const Color(0xFFFFFFFF);
+    final color = isCrit ? const Color(0xFFFFEB3B) : const Color(0xFFFFFFFF);
     final size = isCrit ? 0.6 : 0.45;
 
     final tp = TextPainter(
@@ -34,9 +33,7 @@ class DamageNumber extends PositionComponent {
           color: color.withValues(alpha: alpha),
           fontSize: size * 20,
           fontWeight: FontWeight.bold,
-          shadows: const [
-            Shadow(color: Color(0xFF000000), blurRadius: 4),
-          ],
+          shadows: const [Shadow(color: Color(0xFF000000), blurRadius: 4)],
         ),
       ),
       textDirection: TextDirection.ltr,

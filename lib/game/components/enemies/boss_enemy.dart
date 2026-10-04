@@ -25,7 +25,7 @@ class BossEnemy extends BodyComponent {
   Body createBody() {
     final shape = PolygonShape()..setAsBoxXY(1.5, 1.5);
     final fixture = FixtureDef(shape, friction: 0.4, density: 3.0);
-    return world.createBody(bodyDef)..createFixture(fixture);
+    return world.createBody(bodyDef!)..createFixture(fixture);
   }
 
   void takeDamage(int dmg) {
