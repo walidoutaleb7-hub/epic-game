@@ -1,9 +1,8 @@
 import 'dart:ui';
 
 import 'package:flame_forge2d/flame_forge2d.dart';
-import 'package:flutter/material.dart' show Alignment;
-import 'package:flutter/painting.dart' show LinearGradient;
 
+import 'player_animation.dart';
 import 'player_state.dart';
 
 class Player extends BodyComponent {
@@ -25,12 +24,15 @@ class Player extends BodyComponent {
   double _attackTimer = 0;
   double _wallJumpCooldown = 0;
   bool _facingRight = true;
+  double _hitTimer = 0;
 
   bool _isHooking = false;
   Vector2? _hookTarget;
   Vector2? _hookFrom;
 
   double _lastGroundY = 0;
+
+  PlayerAnimation? anim;
 
   Player(Vector2 position)
       : super(
@@ -48,11 +50,18 @@ class Player extends BodyComponent {
     return world.createBody(bodyDef!)..createFixture(fixture);
   }
 
+  @override
+  Future<void> onLoad() async {
+    anim = PlayerAnimation();
+    await add(anim!);
+  }
+
   PlayerState get state => _state;
   bool get isFacingRight => _facingRight;
   bool get isHooking => _isHooking;
   Vector2? get hookTarget => _hookTarget;
   Vector2? get hookFrom => _hookFrom;
+  bool get isHit => _hitTimer > 0;
 
   void setHorizontal(double x) {
     _horizontalInput = x;
@@ -87,6 +96,8 @@ class Player extends BodyComponent {
 
   void attack() => _attackTimer = 0.25;
 
+  void takeHit() => _hitTimer = 0.4;
+
   void startHook(Vector2 target) {
     if (_isHooking) return;
     _isHooking = true;
@@ -108,6 +119,7 @@ class Player extends BodyComponent {
     if (_dashCooldown > 0) _dashCooldown -= dt;
     if (_attackTimer > 0) _attackTimer -= dt;
     if (_wallJumpCooldown > 0) _wallJumpCooldown -= dt;
+    if (_hitTimer > 0) _hitTimer -= dt;
 
     _detectWall();
 
@@ -120,6 +132,7 @@ class Player extends BodyComponent {
     if (_isHooking && _hookTarget != null) {
       _updateHook(dt);
       _state = PlayerState.hooking;
+      _updateAnim();
       return;
     }
 
@@ -129,12 +142,14 @@ class Player extends BodyComponent {
           : (_facingRight ? 1.0 : -1.0);
       body.linearVelocity = Vector2(dir * _dashSpeed, body.linearVelocity.y * 0.15);
       _state = PlayerState.dashing;
+      _updateAnim();
       return;
     }
 
     if (_isTouchingWall && !_isGrounded && body.linearVelocity.y > 0) {
       body.linearVelocity = Vector2(body.linearVelocity.x * 0.3, _wallSlideSpeed);
       _state = PlayerState.wallSliding;
+      _updateAnim();
       return;
     }
 
@@ -151,6 +166,11 @@ class Player extends BodyComponent {
         _state = PlayerState.jumping;
       }
     }
+    _updateAnim();
+  }
+
+  void _updateAnim() {
+    anim?.playState(_state, facingRight: _facingRight, isHit: _hitTimer > 0);
   }
 
   void _detectWall() {
@@ -181,11 +201,13 @@ class Player extends BodyComponent {
 
   @override
   void render(Canvas canvas) {
+    // ظل
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(0, 1.05), width: 1.2, height: 0.25),
       Paint()..color = const Color(0x59000000),
     );
 
+    // هالة الاندفاع
     if (_state == PlayerState.dashing) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -198,6 +220,7 @@ class Player extends BodyComponent {
       );
     }
 
+    // هالة التسلق
     if (_state == PlayerState.wallSliding) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -210,29 +233,7 @@ class Player extends BodyComponent {
       );
     }
 
-    final bodyPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF4FC3F7), Color(0xFF1565C0)],
-      ).createShader(const Rect.fromLTWH(-0.6, -0.9, 1.2, 1.8));
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTWH(-0.6, -0.9, 1.2, 1.8),
-        const Radius.circular(6),
-      ),
-      bodyPaint,
-    );
-
-    final eyeOffset = _facingRight ? 0.1 : -0.1;
-    final eyeWhite = Paint()..color = const Color(0xFFFFFFFF);
-    final pupil = Paint()..color = const Color(0xFF000000);
-    canvas.drawCircle(Offset(-0.2 + eyeOffset, -0.4), 0.13, eyeWhite);
-    canvas.drawCircle(Offset(0.2 + eyeOffset, -0.4), 0.13, eyeWhite);
-    canvas.drawCircle(Offset(-0.2 + eyeOffset, -0.35), 0.06, pupil);
-    canvas.drawCircle(Offset(0.2 + eyeOffset, -0.35), 0.06, pupil);
-
+    // تأثير الهجوم
     if (_attackTimer > 0) {
       final attackDir = _facingRight ? 1.0 : -1.0;
       canvas.drawArc(
@@ -247,6 +248,7 @@ class Player extends BodyComponent {
       );
     }
 
+    // الخطاف
     if (_isHooking && _hookFrom != null && _hookTarget != null) {
       final localFrom = _hookFrom! - body.position;
       final localTo = _hookTarget! - body.position;
