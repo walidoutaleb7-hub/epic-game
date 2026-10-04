@@ -47,25 +47,20 @@ class GameWrapper extends StatefulWidget {
 
 class _GameWrapperState extends State<GameWrapper> {
   late final EmberfallGame _game;
-  bool _showSplash = true;
 
   @override
   void initState() {
     super.initState();
     _game = EmberfallGame();
-    _game.overlays.add('splash');
-    Future.delayed(const Duration(seconds: 4), () {
-      if (!mounted) return;
-      _game.overlays.remove('splash');
-      setState(() => _showSplash = false);
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0E27),
       body: GameWidget<EmberfallGame>(
         game: _game,
+        loadingBuilder: (context) => const SplashScreenOverlay(),
         overlayBuilderMap: {
           'splash': (context, game) => const SplashScreenOverlay(),
           'mainMenu': (context, game) => MainMenuOverlay(game: game),
