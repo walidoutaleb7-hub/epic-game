@@ -27,7 +27,7 @@ jobs:
       - name: Generate Flutter project files
         run: flutter create . --project-name emberfall --platforms android
 
-      - name: Overwrite AndroidManifest with app name
+      - name: Overwrite AndroidManifest
         run: |
           mkdir -p android/app/src/main
           cat > android/app/src/main/AndroidManifest.xml << 'MANIFEST'
@@ -61,7 +61,7 @@ jobs:
           </manifest>
           MANIFEST
 
-      - name: Update Kotlin, NDK, Android SDK
+      - name: Update Kotlin and SDK
         run: |
           if [ -f android/settings.gradle.kts ]; then
             sed -i 's/org.jetbrains.kotlin.android" version ".*"/org.jetbrains.kotlin.android" version "2.0.0"/' android/settings.gradle.kts
@@ -73,6 +73,9 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons
 
       - name: Build APK
         run: flutter build apk --release
