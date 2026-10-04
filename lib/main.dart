@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'game/epic_game.dart';
 import 'game/ui/hud.dart';
 import 'game/ui/main_menu.dart';
+import 'game/ui/pause_menu.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +32,7 @@ class EpicGameApp extends StatelessWidget {
           overlayBuilderMap: {
             'mainMenu': (context, game) => MainMenuOverlay(game: game),
             'hud': (context, game) => HudOverlay(game: game),
+            'pauseMenu': (context, game) => PauseMenuOverlay(game: game),
           },
         ),
       ),
