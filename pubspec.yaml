@@ -11,7 +11,6 @@ dependencies:
     sdk: flutter
   flame: ^1.18.0
   flame_forge2d: ^0.18.0
-  flame_audio: ^2.10.0
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.0
   shared_preferences: ^2.2.3
@@ -23,3 +22,28 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/player/
+    - assets/images/player/Main Characters/
+    - assets/images/player/Main Characters/Virtual Guy/
+    - assets/images/player/Main Characters/Mask Dude/
+    - assets/images/player/Main Characters/Ninja Frog/
+    - assets/images/player/Main Characters/Pink Man/
+    - assets/images/enemies/
+    - assets/images/items/
+    - assets/images/items/Fruits/
+    - assets/images/items/Boxes/
+    - assets/images/items/Checkpoints/
+    - assets/images/terrain/
+    - assets/images/terrain/Terrain/
+    - assets/images/background/
+    - assets/images/background/Background/
+    - assets/images/effects/
+    - assets/images/effects/Other/
+    - assets/images/traps/
+    - assets/images/traps/Traps/
+    - assets/images/ui/
+    - assets/images/ui/Menu/
+    - assets/images/ui/Menu/Buttons/
+    - assets/images/ui/Menu/Levels/
+    - assets/images/ui/Menu/Text/
